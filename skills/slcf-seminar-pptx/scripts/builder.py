@@ -135,6 +135,8 @@ def _set_bullets_keep_format(shape, bullets, force_black=True):
 
     tf.text = bullets[0]
     first_p = tf.paragraphs[0]
+    # bullet 마커/폰트를 paragraph 레벨에서 명시적으로 강제 (slide layout default 차단)
+    _force_paragraph_bullet_style(first_p)
     if force_black and first_p.runs:
         _force_run_color(first_p.runs[0]._r, BODY_TEXT_COLOR)
 
@@ -178,6 +180,42 @@ def _apply_korean_font(run, size_pt=None, bold=False, color=BODY_TEXT_COLOR):
         rPr.remove(ea)
     ea = etree.SubElement(rPr, f'{{{a_ns}}}ea')
     ea.set('typeface', KOREAN_FONT)
+
+
+def _force_paragraph_bullet_style(paragraph):
+    """paragraph의 bullet 마커를 '•' 로, 폰트를 한국어/Latin 통일로 강제.
+
+    `tf.text = "..."` 직후 호출. python-pptx가 paragraph 레벨 pPr을 리셋해
+    slide layout의 default bullet (template의 ■ + 모노스페이스)이 노출되는 것을 차단.
+    색상/크기/굵기는 건드리지 않음 — _force_run_color 등으로 따로 제어.
+    """
+    p = paragraph._p
+    a_ns = 'http://schemas.openxmlformats.org/drawingml/2006/main'
+    pPr = p.find(f'{{{a_ns}}}pPr')
+    if pPr is None:
+        pPr = etree.SubElement(p, f'{{{a_ns}}}pPr')
+        p.remove(pPr)
+        p.insert(0, pPr)  # pPr은 a:p의 첫 자식이어야 함
+    # 기존 bullet 정의 모두 제거
+    for tag in ('buChar', 'buAutoNum', 'buNone', 'buBlip', 'buFont'):
+        for elem in pPr.findall(f'{{{a_ns}}}{tag}'):
+            pPr.remove(elem)
+    # buFont (bullet 글자 자체의 폰트) + buChar (마커 문자)
+    bu_font = etree.SubElement(pPr, f'{{{a_ns}}}buFont')
+    bu_font.set('typeface', LATIN_FONT)
+    bu_char = etree.SubElement(pPr, f'{{{a_ns}}}buChar')
+    bu_char.set('char', '•')
+    # 각 run에 한국어/Latin 폰트 강제 (색/크기/굵기는 보존)
+    for run in paragraph.runs:
+        run.font.name = LATIN_FONT
+        rPr = run._r.find(f'{{{a_ns}}}rPr')
+        if rPr is None:
+            rPr = etree.SubElement(run._r, f'{{{a_ns}}}rPr')
+            run._r.insert(0, rPr)
+        for ea in rPr.findall(f'{{{a_ns}}}ea'):
+            rPr.remove(ea)
+        ea = etree.SubElement(rPr, f'{{{a_ns}}}ea')
+        ea.set('typeface', KOREAN_FONT)
 
 
 class SeminarBuilder:
