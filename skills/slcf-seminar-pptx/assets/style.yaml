@@ -1,0 +1,52 @@
+version: 1
+
+# SLCF 세미나 발표 양식의 모든 디자인 토큰.
+# 이 파일을 수정하면 모든 슬라이드 산출물에 즉시 반영됩니다.
+# yaml 라이브러리가 없으면 scripts/style.py의 기본값을 사용합니다.
+
+colors:
+  body_text:        "#000000"   # 본문 글씨 (양식 기본 파란색을 덮어씀)
+  accent_red:       "#C00000"   # 강조색 (양식의 빨간 불릿과 동일)
+  header_bg_black:  "#000000"   # 표 헤더, 강조 박스
+  header_text:      "#FFFFFF"   # 헤더 위 글씨
+  important_yellow: "#FFD700"   # 발표의 결정적 슬라이드 — 헤더 글씨에 사용
+  muted_gray:       "#A0A0A0"   # 부가 정보
+  light_gray:       "#E8E8E8"   # 정의 박스, 보조 영역
+  divider_gray:     "#D0D0D0"   # 구분선
+
+fonts:
+  korean:           "맑은 고딕"
+  latin:            "Calibri"
+
+# 폰트 크기 (pt). 의미 단위로 묶여있어 매번 즉흥 결정 X.
+sizes:
+  slide_title:      28          # 본문 슬라이드의 헤더바 제목
+  section_title:    36          # 챕터/섹션 표지의 큰 제목
+  section_number:   60          # 챕터 번호 ("Chapter 3")
+  body:             18          # 본문 불릿/박스 텍스트
+  body_sub:         14          # 보조 본문 (예: 정의 아래 설명)
+  table_header:     13
+  table_body:       12
+  caption:          10          # 출처/페이지 표기
+  diagram_label:    12          # 다이어그램 박스 안 텍스트
+  arrow:            24          # → 화살표 글리프
+
+# 16:9 와이드 슬라이드의 좌표 시스템 (inch).
+# 본문 영역은 (margin_l, header_bottom) ~ (slide_w - margin_r, footer_top).
+grid:
+  slide_w:          13.33
+  slide_h:           7.5
+  margin_l:          0.6
+  margin_r:          0.6
+  header_bottom:     1.5         # 헤더바 아래에서 본문이 시작되는 y
+  footer_top:        6.9         # 푸터/로고 위에서 본문이 끝나는 y
+  col_gap:           0.25
+  num_columns:       12          # 본문 너비를 12분할한 그리드
+
+# 슬라이드 종류별 표준 간격
+spacing:
+  bullet_top:        2.0         # add_title_content 본문 시작 y
+  box_padding_x:     0.15
+  box_padding_y:     0.10
+  process_box_h:     1.0         # add_process 박스 높이
+  process_arrow_w:   0.6

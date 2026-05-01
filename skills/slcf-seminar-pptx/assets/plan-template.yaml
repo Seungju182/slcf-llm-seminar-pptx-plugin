@@ -1,0 +1,121 @@
+# SLCF 세미나 plan.yaml 템플릿
+#
+# 이 파일을 복사하고 아래 [TODO]를 채우세요. 자세한 설명은
+# references/plan-schema.md 참고.
+#
+# 작성 순서:
+#   1) paper 섹션 (1분)
+#   2) extraction.chapters (PDF 목차 보고 — 반드시 모든 챕터)
+#   3) extraction.figures / tables / key_terms / notable_equations (전수 기록)
+#   4) extraction.skipped (의도적으로 뺄 항목, 이유 명시)
+#   5) plan (chapter importance 비례로)
+#
+# 검증: python scripts/plan.py <thisfile>.yaml
+# 빌드: python scripts/build_from_plan.py <thisfile>.yaml --out=발표.pptx
+
+paper:
+  title: "[TODO: 논문/책 제목]"
+  authors: ["[TODO]"]
+  venue: "[TODO: NeurIPS 2020 / 출판사]"
+  total_pages: 0                       # [TODO: PDF 전체 페이지]
+  source_file: "[TODO: file.pdf]"
+  presenter: "[TODO: 발표자]"
+  date: "[TODO: YY.M.D]"
+
+extraction:
+  abstract: "[TODO: 한 문단 요약]"
+
+  chapters:
+    # importance 합 ≈ 1.0이 되게. 빠뜨리면 lint가 잡음.
+    # key_points 작성법은 references/extraction-protocol.md 참고.
+    - num: 1
+      title: "[TODO]"
+      role: ""                          # 선택. 자유 라벨 (예: intro, tooling, ux)
+      pages: [1, 1]                    # [start, end] inclusive
+      importance: 0.0                   # 0.0 ~ 1.0 (모든 챕터 합 ≈ 1.0)
+      summary: "[TODO 한 문단]"
+      key_points:                       # 청중이 가져가야 할 것 3~5개 — 가장 중요
+        - "[TODO 핵심 1]"
+        - "[TODO 핵심 2]"
+        - "[TODO 핵심 3]"
+      key_concept_pages: []
+      figure_nums: []
+      table_nums: []
+      takeaway: "[TODO 한 줄]"
+
+    # - num: 2
+    #   title: "..."
+    #   role: "tooling"
+    #   pages: [1, 1]
+    #   importance: 0.0
+    #   summary: "..."
+    #   key_points:
+    #     - "..."
+    #   takeaway: "..."
+
+  figures:
+    # PDF의 모든 figure를 기록. 발표에서 안 쓸 거면 extraction.skipped.figures에.
+    # - num: 1
+    #   caption: "..."
+    #   page: 0
+    #   type: diagram                   # diagram | photo | chart | flowchart
+    #   importance: high                # high | medium | low
+
+  tables:
+    # PDF의 모든 table.
+    # - num: 1
+    #   caption: "..."
+    #   page: 0
+    #   importance: high
+
+  key_terms:
+    # 정의 슬라이드로 살릴 만한 용어들.
+    # - term: "..."
+    #   page: 0
+    #   simple_definition: "..."
+
+  notable_equations:
+    # - num: 1
+    #   page: 0
+    #   latex: "..."
+    #   meaning: "..."
+
+  skipped:
+    figures: []                         # 의도적으로 제외할 figure 번호
+    reasons: {}                         # {"5": "이유"}
+    chapters: []                        # 통째 제외할 챕터
+
+# ===== 슬라이드 plan =====
+plan:
+  - type: cover
+    # date / title 생략 시 paper에서 자동 채움
+
+  - type: toc
+    items:
+      - "[TODO: 챕터 1 한국어 제목]"
+      - "[TODO: 챕터 2]"
+
+  # 챕터 1 영역
+  - type: section_header
+    num: 1
+    title: "[TODO]"
+    subtitle: "[TODO]"
+    chapter_ref: 1
+
+  # ... chapter 1의 본문 슬라이드들
+  # importance에 비례하는 분량으로
+
+  # 챕터 2 영역
+  - type: section_header
+    num: 2
+    title: "[TODO]"
+    chapter_ref: 2
+
+  # ... 등등
+
+  # 마지막
+  - type: conclusion
+    takeaways:
+      - "[TODO]"
+    next_steps:
+      - "[TODO]"

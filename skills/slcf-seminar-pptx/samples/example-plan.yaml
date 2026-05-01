@@ -1,0 +1,456 @@
+# LLM Agents 책 발표 plan 예제
+# 원본: Michael Albada, "Building Applications with AI Agents" (O'Reilly, 2025)
+# 13개 챕터 355페이지를 1시간 세미나용 25장 슬라이드로 정리.
+#
+# Lint: python scripts/plan.py samples/example-plan.yaml
+# Build: python scripts/build_from_plan.py samples/example-plan.yaml --out=/tmp/agents.pptx
+
+paper:
+  title: "Building Applications with AI Agents"
+  authors: ["Michael Albada"]
+  venue: "O'Reilly Media, 2025"
+  total_pages: 355
+  source_file: "Building Applications with AI Agents-Albada-s.pdf"
+  presenter: "이승주"
+  date: "26.5.10"
+
+extraction:
+  abstract: |
+    AI Agent 시스템 설계·구현·운영에 대한 종합 가이드. 13개 챕터에 걸쳐 개념·설계·UX·도구·orchestration·
+    memory·학습·확장·평가·모니터링·개선·보안·인간 협업까지 다룸. O'Reilly 표준 실용서 형식.
+
+  chapters:
+    - num: 1
+      title: "Introduction to Agents"
+      role: "intro"
+      pages: [1, 16]
+      importance: 0.08
+      summary: "Agent 정의, pretraining 혁명, agent 종류, 워크플로우 vs agent 구분, 주요 framework 소개"
+      key_points:
+        - "Agent = LLM이 도구 호출과 다단계 추론으로 목표 달성하는 시스템"
+        - "Workflow와 Agent의 차이: 사전 정의 vs 동적 결정"
+        - "주요 framework 4종: LangGraph, AutoGen, CrewAI, OpenAI Agents SDK"
+        - "Sync → Async 전환이 agent 응용의 핵심 트렌드"
+      takeaway: "Agent는 LLM 단독 prompt가 못 푸는 다단계 / 도구 사용 작업을 자동화한다"
+
+    - num: 2
+      title: "Designing Agent Systems"
+      role: "design"
+      pages: [17, 39]
+      importance: 0.10
+      summary: "첫 agent 시스템 예제, core components (model/tools/memory/orchestration), 트레이드오프, 단일/멀티 architecture"
+      key_points:
+        - "Core components 4가지: Model selection, Tools, Memory, Orchestration"
+        - "Memory 단기/장기 분리 + retrieval 전략이 agent 품질의 큰 변수"
+        - "Trade-off 4축: 속도/정확도, 확장성, 신뢰성, 비용"
+        - "Architecture 분기: Single-agent vs Multi-agent (협력·병렬·조율)"
+      takeaway: "Agent 설계는 4개 component + 4개 trade-off의 매트릭스 결정 문제"
+
+    - num: 3
+      title: "User Experience Design"
+      role: "ux"
+      pages: [41, 68]
+      importance: 0.06
+      summary: "Interaction modality (text/GUI/voice/video), sync vs async UX, autonomy slider, trust 설계"
+      key_points:
+        - "Interaction modality 4종 + 결합 — text가 여전히 기본, voice/video가 부상"
+        - "Autonomy slider: 사용자가 agent 자율성을 직접 조절"
+        - "Sync vs Async — proactive 행동의 시점·횟수가 신뢰의 핵심"
+        - "Failing gracefully: 실패해도 사용자가 통제권을 잃지 않게"
+      takeaway: "Agent UX는 자율성과 사용자 통제권의 균형을 제품 레벨에서 결정"
+
+    - num: 4
+      title: "Tool Use"
+      role: "tooling"
+      pages: [71, 88]
+      importance: 0.08
+      summary: "LangChain 기본, Local/API/Plug-in/MCP/Stateful 도구 종류, 자동 도구 개발 (foundation model로 도구 생성)"
+      key_points:
+        - "도구 5종: Local, API-based, Plug-in, MCP, Stateful"
+        - "MCP(Model Context Protocol)가 도구 표준화의 새 흐름"
+        - "Foundation Model이 도구를 직접 생성하는 단계로 진화"
+        - "Tool use config: 호출 빈도·실패 처리·캐싱 결정 요인"
+      takeaway: "도구 정의·호출·통합이 agent의 외부 세계 접점이며, 표준화(MCP)가 빠르게 진전 중"
+
+    - num: 5
+      title: "Orchestration"
+      role: "orchestration"
+      pages: [89, 130]
+      importance: 0.13
+      summary: "Agent type 6종 (Reflex/ReAct/Planner-Executor/Query-Decomposition/Reflection/Deep Research), tool selection 전략, topology, planning"
+      key_points:
+        - "Agent type 6종 — 작업 복잡도에 따라 ReAct → Planner-Executor → Reflection 단계적 채택"
+        - "Tool selection 3전략: Standard / Semantic / Hierarchical — 도구 수가 많아질수록 후자로"
+        - "Tool topology: 직렬·병렬·체인·트리·그래프 — 의존성 구조가 결정"
+        - "Planning: incremental vs zero-shot vs few-shot vs ReAct — 비용·정확도 트레이드오프"
+      takeaway: "Orchestration이 single agent와 multi-agent의 분기점이며, agent 시스템의 행동 패턴을 결정"
+
+    - num: 6
+      title: "Memory"
+      role: "memory"
+      pages: [131, 160]
+      importance: 0.07
+      summary: "Context window, keyword 기반, semantic memory + vector stores (RAG), GraphRAG, working memory (whiteboard)"
+      key_points:
+        - "Memory 4계층: context window → keyword → semantic(vector) → graph"
+        - "RAG가 외부 지식 통합의 표준, GraphRAG로 관계형 정보까지 확장"
+        - "Working memory(whiteboard, note-taking)가 multi-step 작업의 상태 유지"
+        - "Memory retrieval 정확도가 agent 품질의 직접 변수"
+      takeaway: "Memory 설계는 'context window 한계'라는 제약을 외부 저장소·검색으로 보완하는 작업"
+
+    - num: 7
+      title: "Learning from Experience"
+      role: "learning"
+      pages: [161, 184]
+      importance: 0.05
+      summary: "Nonparametric (experience as examples, reflection), Parametric (fine-tuning), Transfer learning"
+      key_points:
+        - "Nonparametric: 과거 trace를 retrieval해 in-context로 학습 (저비용)"
+        - "Parametric: fine-tuning으로 가중치 갱신 (고비용·고품질)"
+        - "Reflection — 실행 후 자기 평가가 다음 시도 품질을 끌어올림"
+      takeaway: "Agent의 성장은 in-context (단기) + fine-tuning (장기) 두 축으로"
+
+    - num: 8
+      title: "Scaling to Multiagent Systems"
+      role: "multiagent"
+      pages: [185, 210]
+      importance: 0.07
+      summary: "단일 → 다중 agent 전환 시점, 협력 패턴 (democratic/manager/hierarchical/actor-critic), framework 비교"
+      key_points:
+        - "Multi-agent로 가는 시점: 작업이 여러 도메인에 걸치거나 병렬화 가능할 때"
+        - "Coordination 5패턴: 민주제, manager, 계층적, actor-critic, automated design"
+        - "Framework 선택은 coordination 패턴 매핑이 1차 기준"
+      takeaway: "Multi-agent는 'agent 수를 늘리는 것'이 아니라 'coordination 패턴을 선택하는 것'"
+
+    - num: 9
+      title: "Measurement and Validation"
+      role: "evaluation"
+      pages: [211, 240]
+      importance: 0.07
+      summary: "Eval objective (정확도/강건성/효율성), eval set 구성, unit/integration test, hallucination 검사"
+      key_points:
+        - "Eval 목표 5종: 정확도, robustness, 효율, 안전, 사용자 만족"
+        - "Unit test (tools/planning/memory) + integration test (end-to-end)"
+        - "Hallucination 검출이 agent eval의 가장 어려운 부분"
+        - "Deployment 전 'eval set'은 production traffic 분포를 닮아야"
+      takeaway: "Agent 신뢰성은 unit→integration→production-mirror eval 3단계 검증으로 확보"
+
+    - num: 10
+      title: "Production Monitoring"
+      role: "monitoring"
+      pages: [241, 264]
+      importance: 0.05
+      summary: "실패 원인 분류, system health metrics, distribution shift 감지, scale 모니터링 (analytics/alerting/logging)"
+      key_points:
+        - "실패 원인 분류 → 자동/사람 평가 양쪽으로 metric 수집"
+        - "Distribution shift 감지가 production agent 운영의 1순위"
+        - "로깅 granularity: 비용·재현성 트레이드오프"
+      takeaway: "Production agent는 분포 이탈을 잡아야 침묵 실패가 사라진다"
+
+    - num: 11
+      title: "Improvement Loops"
+      role: "improvement"
+      pages: [265, 290]
+      importance: 0.05
+      summary: "피드백 파이프라인, 실험 (shadow/A-B/adaptive/gating), continuous learning (in-context/offline/online RL)"
+      key_points:
+        - "Feedback loop: 이슈 감지 → human review → refinement → prioritization"
+        - "Shadow deployment + A/B test이 안전한 배포 표준"
+        - "Continuous learning 3계층: in-context (즉시), offline retraining, online RL"
+      takeaway: "Agent는 한 번 배포하고 끝이 아니라 feedback loop로 계속 개선되어야"
+
+    - num: 12
+      title: "Protecting Agent Systems"
+      role: "security"
+      pages: [291, 320]
+      importance: 0.10
+      summary: "Agent 고유 위험, LLM 보안 (모델 선택/방어/red team/fine-tuning), 데이터 보호, agent 보안 safeguards, governance"
+      key_points:
+        - "Agent 고유 위험: prompt injection, tool misuse, runaway loops, data exfiltration"
+        - "LLM 보안 4축: model selection, defense, red teaming, fine-tuning"
+        - "Data protection: privacy + provenance — 어디서 온 데이터인지 추적"
+        - "Safeguards: external (rate limit, allow-list) + internal (self-check, refusal)"
+        - "Governance/compliance — EU AI Act, NIST AI RMF 같은 규제 준수"
+      takeaway: "Agent 보안은 LLM 보안 + 도구 보안 + 데이터 보안의 3중 방어"
+
+    - num: 13
+      title: "Humans and Agents"
+      role: "ethics"
+      pages: [321, 350]
+      importance: 0.09
+      summary: "윤리 원칙 (감독/투명성/공정성/설명가능성/프라이버시), 신뢰·oversight 구축, 편향 대응, accountability/규제"
+      key_points:
+        - "5대 윤리 원칙: oversight, transparency, fairness, explainability, privacy"
+        - "Trust 구축 — 사용자가 agent 결정을 검증·번복할 수 있어야"
+        - "Bias는 모델·데이터·설계 모든 단계에서 누적 — 단계별 개입 필요"
+        - "Accountability: 결정 책임이 누구(사용자·개발자·운영자)에게 있는지 명시"
+      takeaway: "Agent 시스템은 기술 결정이 아니라 인간-기계 협업 설계의 문제"
+
+  figures: []
+  tables: []
+  key_terms:
+    - term: "Agent"
+      page: 1
+      simple_definition: "LLM이 도구 호출·다단계 추론으로 목표를 달성하는 시스템"
+    - term: "ReAct"
+      page: 91
+      simple_definition: "Reasoning과 Acting을 번갈아 수행하는 agent 패턴"
+    - term: "MCP"
+      page: 81
+      simple_definition: "Model Context Protocol — 도구 호출 표준 프로토콜"
+  notable_equations: []
+  skipped:
+    figures: []
+    chapters: []
+
+# ===== 25장 슬라이드 plan =====
+plan:
+  - type: cover
+
+  - type: toc
+    items:
+      - "Agent 개요 (Ch 1)"
+      - "설계와 핵심 컴포넌트 (Ch 2-3)"
+      - "도구와 Orchestration (Ch 4-5)"
+      - "Memory·Learning·Scaling (Ch 6-8)"
+      - "검증·모니터링·개선 (Ch 9-11)"
+      - "보안·윤리 (Ch 12-13)"
+
+  # ===== Part I: Agent 개요 =====
+  - type: section_header
+    num: 1
+    title: "Introduction to Agents"
+    subtitle: "Agent란 무엇인가"
+    chapter_ref: 1
+
+  - type: definition
+    term: "AI Agent"
+    definition: "LLM이 도구 호출과 다단계 추론으로 사용자의 목표를 달성하는 시스템"
+    why:
+      - "단일 prompt로 풀 수 없는 다단계 작업 자동화"
+      - "외부 세계(API, DB, 파일)와 상호작용 가능"
+      - "GPT-3.5 이후 도구 호출 정확도가 실용 수준 도달"
+    examples:
+      - "고객 문의를 분류·답변·티켓 생성"
+      - "코드 리뷰 → 수정 제안 → PR 생성"
+    source_page: 1
+    important: true
+    speaker_notes: |
+      이 slide가 전체 발표의 출발점.
+      "Agent vs Chatbot 차이가 뭔가?" 질문이 자주 나오는데
+      답은 "도구 호출 + 다단계 추론" 두 키워드.
+      청중이 익숙한 예시(고객 문의·코드 리뷰)로 먼저 고정시키고
+      다음 슬라이드의 Workflow vs Agent 비교로 넘어감.
+
+  - type: comparison
+    title: "Workflow vs Agent"
+    headers: ["축", "Workflow", "Agent"]
+    rows:
+      - ["흐름", "사전 정의된 단계", "동적 결정"]
+      - ["LLM 역할", "각 단계 내 task 수행", "다음 단계 자체를 결정"]
+      - ["불확실성", "낮음 (예측 가능)", "높음 (탐색적)"]
+      - ["적합 case", "정형 처리", "비정형 / 추론 필요"]
+    source_page: 8
+
+  # ===== Part II: 설계 =====
+  - type: section_header
+    num: 2
+    title: "Designing Agent Systems"
+    subtitle: "Core components와 trade-off"
+    chapter_ref: 2
+
+  - type: process
+    title: "Core Components 4종"
+    steps: ["Model", "Tools", "Memory", "Orchestration"]
+    descriptions:
+      - "LLM 선택"
+      - "외부 호출"
+      - "단기·장기 저장"
+      - "흐름 제어"
+    source_page: 20
+    important: true
+
+  - type: two_content
+    title: "Architecture: Single vs Multi-agent"
+    left_title: "Single-agent"
+    left_bullets:
+      - "구조 단순, 디버깅 쉬움"
+      - "context를 한 모델이 전부 가짐"
+      - "단일 도메인 작업 적합"
+    right_title: "Multi-agent"
+    right_bullets:
+      - "병렬·전문화 가능"
+      - "Coordination overhead 발생"
+      - "복합 도메인 / 대규모 작업"
+    source_page: 32
+
+  - type: section_header
+    num: 3
+    title: "User Experience Design"
+    subtitle: "Agent UX 원칙"
+    chapter_ref: 3
+
+  - type: two_content
+    title: "Sync vs Async UX"
+    left_title: "Synchronous"
+    left_bullets:
+      - "즉시 응답 기대"
+      - "대화형 인터페이스"
+      - "응답 지연이 신뢰 손실"
+    right_title: "Asynchronous"
+    right_bullets:
+      - "장시간 작업 (분~시간)"
+      - "진행 상황 공유 필수"
+      - "Proactive vs intrusive 균형"
+    source_page: 58
+
+  # ===== Part III: 도구와 Orchestration =====
+  - type: section_header
+    num: 4
+    title: "Tool Use"
+    subtitle: "Agent가 외부 세계와 만나는 곳"
+    chapter_ref: 4
+
+  - type: process
+    title: "도구 5종"
+    steps: ["Local", "API", "Plug-in", "MCP", "Stateful"]
+    emphasize: [3]
+    descriptions:
+      - "프로세스 내부"
+      - "외부 호출"
+      - "확장 모듈"
+      - "표준 프로토콜"
+      - "상태 보존"
+    source_page: 73
+
+  - type: section_header
+    num: 5
+    title: "Orchestration"
+    subtitle: "Agent의 행동 패턴 결정"
+    chapter_ref: 5
+    important: true
+
+  - type: comparison
+    title: "Agent Type 6종"
+    headers: ["타입", "특징", "적합 작업"]
+    rows:
+      - ["Reflex", "단순 입력→출력 매핑", "단일 응답"]
+      - ["ReAct", "Reason+Act 반복", "도구 사용"]
+      - ["Planner-Executor", "계획 후 실행", "다단계"]
+      - ["Query-Decomp", "질문 분해", "복합 쿼리"]
+      - ["Reflection", "자기 평가 후 재시도", "정확도 우선"]
+      - ["Deep Research", "장기간 탐색", "조사·분석"]
+    source_page: 90
+    important: true
+
+  - type: process
+    title: "ReAct 흐름"
+    steps: ["Thought", "Action", "Observation", "반복", "Final"]
+    emphasize: [0]
+    descriptions:
+      - "추론"
+      - "도구 호출"
+      - "결과 받음"
+      - "수렴까지"
+      - "응답 종합"
+    source_page: 91
+
+  - type: comparison
+    title: "Tool Selection 전략"
+    headers: ["전략", "도구 수", "지연", "정확도"]
+    rows:
+      - ["Standard", "~10", "낮음", "높음"]
+      - ["Semantic", "~100", "중간", "중간"]
+      - ["Hierarchical", "1000+", "높음", "조정 가능"]
+    source_page: 94
+
+  # ===== Part IV: Memory · Learning · Scaling =====
+  - type: section_header
+    num: 6
+    title: "Memory · Learning · Scaling"
+    subtitle: "Ch 6-8 통합"
+    chapter_ref: 6
+
+  - type: title_content
+    title: "Memory 4계층"
+    bullets:
+      - "Context window — 즉시 사용, 토큰 한계"
+      - "Keyword — TF-IDF 등 단순 검색"
+      - "Semantic (vector store) — embedding 기반, RAG의 토대"
+      - "Graph (GraphRAG) — 관계형 지식 통합"
+    source_page: 131
+
+  - type: title_content
+    title: "Learning · Multi-agent 핵심"
+    bullets:
+      - "In-context: trace retrieval로 즉시 학습 (저비용)"
+      - "Fine-tuning: 가중치 갱신 (고품질, 고비용)"
+      - "Reflection: 자기 평가가 다음 시도를 끌어올림"
+      - "Multi-agent coordination 5패턴: 민주/manager/계층/actor-critic/auto"
+    source_page: 161
+
+  # ===== Part V: 검증·모니터링·개선 =====
+  - type: section_header
+    num: 9
+    title: "검증 · 모니터링 · 개선"
+    subtitle: "Ch 9-11 통합"
+    chapter_ref: 9
+
+  - type: comparison
+    title: "Eval 3계층"
+    headers: ["계층", "검사 대상", "도구"]
+    rows:
+      - ["Unit", "tools / planning / memory 개별", "단위 테스트"]
+      - ["Integration", "end-to-end agent 흐름", "시나리오 테스트"]
+      - ["Production-mirror", "실제 트래픽 분포", "shadow + A/B"]
+    source_page: 220
+
+  - type: title_content
+    title: "Continuous Learning 3계층"
+    bullets:
+      - "In-context — feedback을 prompt에 즉시 반영"
+      - "Offline retraining — 주기적 fine-tune"
+      - "Online RL — production 보상 신호로 갱신"
+    source_page: 280
+
+  # ===== Part VI: 보안·윤리 =====
+  - type: section_header
+    num: 12
+    title: "보안 · 윤리"
+    subtitle: "Ch 12-13"
+    chapter_ref: 12
+
+  - type: title_content
+    title: "Agent 고유 위험 4종"
+    bullets:
+      - "Prompt injection — 외부 입력이 agent 명령으로 둔갑"
+      - "Tool misuse — 권한 초과 호출"
+      - "Runaway loops — 무한 자기호출 / cost 폭주"
+      - "Data exfiltration — 민감 데이터를 외부로 누출"
+    source_page: 291
+    important: true
+
+  - type: title_content
+    title: "5대 윤리 원칙"
+    bullets:
+      - "Oversight — 사용자가 agent 결정을 모니터링"
+      - "Transparency — 도구·데이터·결정 근거 공개"
+      - "Fairness — 모델·데이터·설계 단계의 편향 누적 차단"
+      - "Explainability — 결정의 추적 가능성"
+      - "Privacy — 개인정보의 입력·저장·로깅 통제"
+    source_page: 321
+
+  # ===== 결론 =====
+  - type: conclusion
+    title: "결론"
+    takeaways:
+      - "Agent = LLM + 도구 + Memory + Orchestration의 4개 component 결정 문제"
+      - "ReAct를 시작점으로, 작업 복잡도에 따라 Planner-Executor / Reflection으로 진화"
+      - "Production agent의 핵심은 eval 3계층 + 분포 이탈 모니터링"
+      - "보안·윤리는 부가 작업이 아니라 설계의 일부"
+    next_steps:
+      - "프로토타입을 ReAct + LangGraph로 시작"
+      - "Tool 정의에 MCP 표준 적용"
+      - "Eval set을 production traffic mirror로 구성"
+      - "Red teaming + safeguards 사전 설계"
+    important: true

@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+.venv/
+venv/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# OMC / Claude Code session state
+.omc/
+.claude/state/
+.claude/sessions/
+
+# Build artifacts
+*.skill
+/tmp-output/
+
+# Optional: local builds for testing
+/build/
+/dist/
