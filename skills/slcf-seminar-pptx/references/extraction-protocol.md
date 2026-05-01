@@ -122,8 +122,36 @@ plan:
 | 장단점 / 전후 / 두 관점 | `two_content` |
 | 일반 정리 / 불릿 본문 | `title_content` |
 | 사진/도식 살려야 함 | `image` |
+| 같은 주제의 figure 2~4개 묶기 | `image_grid` |
 
 한 key_point가 여러 슬라이드로 풀어쓰여도 OK (특히 important 키포인트).
+
+## ⚠️ Deck-level 비주얼 분배 (강의자료는 글보다 그림)
+
+세미나 발표는 **시각적**이어야 함. plan 작성 시 다음 분배를 목표로 (실측에서 글-only deck은 청중 집중도 떨어짐):
+
+| 카테고리 | 권장 비율 | 슬라이드 type |
+|---|---|---|
+| **시각 우선** | **40~50%** | `image`, `image_grid`, `process`, `comparison` (표) |
+| **구조적** | 20~30% | `definition`, `two_content` |
+| **글-only** | **20~30% 이하** | `title_content` |
+| **프레임** | 10~20% | `cover`, `toc`, `section_header`, `conclusion` |
+
+### 글-heavy 슬라이드 줄이는 trick
+
+| 만들고 싶은 슬라이드 | 글-only 대신 |
+|---|---|
+| "5개 키워드 나열" `title_content` | → `process` (각 키워드를 박스로) 또는 표 (`comparison`) |
+| "긴 본문 정의" `title_content` | → `definition` (정의 박스 + 왜+예시) |
+| "3개 모델 차이점 bullet" `title_content` | → `comparison` 표 |
+| "프로세스 단계 bullet" `title_content` | → `process` (가로 박스 + 화살표) |
+| "여러 인용/예시 bullet" `title_content` | → 본문 figure가 있으면 `image` / `image_grid`로 캡처 |
+
+**원칙**: `title_content`로 끝내기 전에 위 표의 우측 변환이 가능한지 항상 확인.
+
+### Figure는 캡처가 default — §3에서 강제
+
+`extraction.figures`에 importance=high/medium 항목이 있으면 거의 무조건 `image` 또는 `image_grid` 슬라이드로 (§3 정책). PDF에 figure가 있는데 plan에 없으면 lint warning. "분량상 텍스트로 통합" 같은 자체 판단 금지.
 
 ---
 

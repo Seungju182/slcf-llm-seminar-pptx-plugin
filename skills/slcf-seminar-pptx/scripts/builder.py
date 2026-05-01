@@ -383,12 +383,12 @@ class SeminarBuilder:
             tf = body_shape.text_frame
             tf.word_wrap = True
             try:
-                tf.vertical_anchor = MSO_ANCHOR.MIDDLE  # 수직 중앙 정렬
+                tf.vertical_anchor = MSO_ANCHOR.TOP  # 본문은 위쪽부터 시작
             except Exception:
                 pass
             for para in tf.paragraphs:
-                para.space_before = Pt(8)
-                para.space_after = Pt(8)
+                para.space_before = Pt(10)
+                para.space_after = Pt(10)
                 for run in para.runs:
                     run.font.size = Pt(body_size)
 
@@ -639,20 +639,21 @@ class SeminarBuilder:
         if text_color is None:
             text_color = auto_text_color
 
-        # 텍스트
+        # 텍스트 — \n으로 만들어진 모든 paragraph에 폰트/색 일관 적용
         tf = shape.text_frame
         tf.word_wrap = True
         tf.margin_left = Inches(0.1)
         tf.margin_right = Inches(0.1)
         tf.text = text
-        p = tf.paragraphs[0]
-        align_map = {'left': PP_ALIGN.LEFT, 'center': PP_ALIGN.CENTER, 'right': PP_ALIGN.RIGHT}
-        p.alignment = align_map.get(align, PP_ALIGN.CENTER)
+        align_map = {'left': PP_ALIGN.LEFT, 'center': PP_ALIGN.CENTER,
+                     'right': PP_ALIGN.RIGHT}
         tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-        if p.runs:
-            _apply_korean_font(
-                p.runs[0], size_pt=font_size, bold=bold, color=text_color
-            )
+        for p in tf.paragraphs:
+            p.alignment = align_map.get(align, PP_ALIGN.CENTER)
+            for run in p.runs:
+                _apply_korean_font(
+                    run, size_pt=font_size, bold=bold, color=text_color
+                )
 
         return shape
 
@@ -716,44 +717,74 @@ class SeminarBuilder:
         return notes_tf
 
     def add_section_header(self, num, title, subtitle='', important=False):
-        """챕터/섹션 표지 슬라이드.
+        """챕터/섹션 표지 슬라이드 — full-bleed 다크 dramatic 레이아웃.
 
-        본문 헤더바에 'N. {title}'을 넣고, 가운데에 큰 'Chapter N'(빨강)과
-        제목(검정 굵게)을 배치. 발표 흐름의 chapter 전환점.
+        헤더바·본문 콘텐츠 영역을 모두 검정으로 덮고 큰 'Chapter N' (빨강) +
+        title (흰색 굵게) + subtitle (회색) 중앙 배치. SLCF 로고/페이지번호는
+        footer 영역에 그대로 보존.
 
         Args:
             num: 챕터 번호 (int)
             title: 챕터 제목
             subtitle: 부제 (선택)
-            important: True면 헤더 글씨를 노란색으로 강조
+            important: True면 제목 아래 노란 accent line
         """
-        slide = self.add_title_only(f'{num}. {title}', important=important)
+        slide = self._clone_slide(self._source_content)
         g = self.style.grid
-        s = self.style.sizes
         c = self.style.colors
 
+        # 양식의 헤더+본문 영역 shape 제거 (footer 로고/페이지번호는 y>=6.7 가정)
+        for shape in list(slide.shapes):
+            if shape.top is None:
+                continue
+            top_inch = shape.top / 914400
+            if top_inch < 6.7:
+                sp = shape._element
+                sp.getparent().remove(sp)
+
+        # 풀 다크 배경 (footer 위까지)
+        bg = slide.shapes.add_shape(
+            MSO_SHAPE.RECTANGLE,
+            Inches(0), Inches(0),
+            Inches(g.slide_w), Inches(6.85)
+        )
+        bg.fill.solid()
+        bg.fill.fore_color.rgb = RGBColor(0x0E, 0x10, 0x14)  # near-black
+        bg.line.fill.background()
+
+        # 'Chapter N' — 큰 빨간 강조
         self.add_textbox(slide, f'Chapter {num}',
-            left=g.content_left(), top=2.5,
-            width=g.content_width(), height=1.4,
-            font_size=s.section_number, bold=True,
+            left=0, top=2.0, width=g.slide_w, height=1.4,
+            font_size=72, bold=True,
             color=c.accent_red, align='center')
 
+        # 챕터 제목 — 큰 흰색 굵게
         self.add_textbox(slide, title,
-            left=g.content_left(), top=4.0,
-            width=g.content_width(), height=1.0,
-            font_size=s.section_title, bold=True,
-            color=c.body_text, align='center')
+            left=0, top=3.6, width=g.slide_w, height=1.2,
+            font_size=44, bold=True,
+            color=c.header_text, align='center')
 
         if subtitle:
             self.add_textbox(slide, subtitle,
-                left=g.content_left(), top=5.2,
-                width=g.content_width(), height=0.6,
-                font_size=s.body, color=c.muted_gray, align='center')
+                left=0, top=4.95, width=g.slide_w, height=0.7,
+                font_size=22,
+                color=c.muted_gray, align='center')
+
+        if important:
+            # 가운데 노란 accent line
+            line = slide.shapes.add_shape(
+                MSO_SHAPE.RECTANGLE,
+                Inches(g.slide_w/2 - 1.5), Inches(5.85),
+                Inches(3.0), Inches(0.05)
+            )
+            line.fill.solid()
+            line.fill.fore_color.rgb = c.important_yellow
+            line.line.fill.background()
 
         return slide
 
     def add_toc(self, items, current=None, title='목차', important=False):
-        """목차 슬라이드. 번호+항목으로 세로 정렬. current 지정 시 해당 행 강조.
+        """목차 슬라이드. 번호(빨강 큰 글씨) + 항목(검정 큰 본문)으로 세로 정렬.
 
         Args:
             items: 목차 항목 리스트 (한국어)
@@ -767,19 +798,53 @@ class SeminarBuilder:
         c = self.style.colors
 
         n = len(items)
-        item_h = 0.6
+        # 항목 수에 따라 동적 폰트 + 간격
+        if n <= 4:
+            item_size = 28
+            num_size = 36
+            item_h = 1.05
+        elif n <= 6:
+            item_size = 24
+            num_size = 32
+            item_h = 0.85
+        else:
+            item_size = 20
+            num_size = 28
+            item_h = 0.7
+
         total_h = n * item_h
-        start_top = (g.content_top() + g.content_bottom()) / 2 - total_h / 2 + 0.2
+        # 콘텐츠 영역 안에서 수직 중앙 정렬
+        avail = g.content_bottom() - g.content_top() - 0.4
+        if total_h > avail:
+            total_h = avail
+            item_h = avail / n
+        start_top = g.content_top() + 0.3 + (avail - total_h) / 2
+
+        # 번호 컬럼: 왼쪽 ~1.4" 폭, 항목 컬럼: 그 옆
+        num_w = 1.6
+        num_left = g.content_left() + 0.6
+        item_left = num_left + num_w + 0.3
+        item_w = g.content_width() - (item_left - g.content_left()) - 0.4
 
         for i, item in enumerate(items):
             is_current = (current is not None and (i + 1 == current))
-            text = f'  {i+1:02d}.    {item}'
-            color = c.accent_red if is_current else c.body_text
-            self.add_textbox(slide, text,
-                left=g.content_left() + 1.5,
-                top=start_top + i * item_h,
-                width=g.content_width() - 3.0, height=item_h,
-                font_size=s.body, bold=is_current, color=color, align='left')
+            num_color = c.accent_red
+            item_color = c.accent_red if is_current else c.body_text
+            top = start_top + i * item_h
+
+            # 번호 (큰 빨간 글씨)
+            self.add_textbox(slide, f'{i+1:02d}',
+                left=num_left, top=top,
+                width=num_w, height=item_h,
+                font_size=num_size, bold=True,
+                color=num_color, align='left')
+
+            # 항목
+            self.add_textbox(slide, item,
+                left=item_left, top=top,
+                width=item_w, height=item_h,
+                font_size=item_size, bold=is_current,
+                color=item_color, align='left')
 
         return slide
 
@@ -805,7 +870,17 @@ class SeminarBuilder:
         c = self.style.colors
 
         box_top = g.content_top() + 0.2
-        box_h = 1.0   # 정의 박스를 더 컴팩트하게 → 아래 섹션에 더 많은 공간
+        # 정의 길이에 따라 box_h 동적 조정 (overflow 방지)
+        # 18pt 한국어/Latin 혼합 텍스트는 폭 12.13"에서 ~70-80자/줄
+        chars = len(definition)
+        if chars <= 80:
+            box_h = 0.9
+        elif chars <= 160:
+            box_h = 1.3
+        elif chars <= 240:
+            box_h = 1.7
+        else:
+            box_h = 2.1
         self.add_box(slide, definition,
             left=g.content_left(), top=box_top,
             width=g.content_width(), height=box_h,
