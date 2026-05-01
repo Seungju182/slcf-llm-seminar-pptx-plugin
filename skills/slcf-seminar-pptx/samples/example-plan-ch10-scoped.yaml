@@ -1,0 +1,248 @@
+# Ch10 'Monitoring in Production' 단일 챕터 발표
+# 출처: Albada, "Building Applications with AI Agents" (O'Reilly, 2025)
+# scope: chapter, 18 슬라이드, mixed focus
+
+schema_version: "1.1"
+
+paper:
+  title: "Building Applications with AI Agents"
+  authors: ["Michael Albada"]
+  venue: "O'Reilly Media, 2025"
+  total_pages: 355
+  source_file: "Building Applications with AI Agents-Albada-s.pdf"
+  presenter: "이승주"
+  date: "26.5.1"
+
+extraction:
+  abstract: |
+    Production agent 시스템 모니터링 — agent는 probabilistic이라
+    전통적 unit test로 신뢰성 보장 불가. 모니터링은 학습/회복의 신경계.
+    Infra + Semantic 두 축, 스택 5종 비교, 5가지 운영 패턴
+    (Shadow/Canary/Regression-trace/Self-heal/User-feedback),
+    Distribution shift 감지, 그리고 Product/ML/SRE 공유 거버넌스.
+
+  scope:
+    type: chapter
+    chapter_nums: [10]
+    target_slides: 18
+    focus: mixed
+    description: "Ch10 (Monitoring in Production) — 1시간 세미나 발표"
+
+  chapters:
+    - num: 10
+      title: "Monitoring in Production"
+      role: "production_ops"
+      pages: [223, 241]
+      importance: 1.0
+      summary: |
+        Agent를 prod에 띄운 뒤가 진짜 시작. probabilistic 동작 + 무한 입력 + 다단계
+        도구 chain 때문에 traditional 모니터링으론 부족. infra + semantic 두 축으로
+        instrumentation. OSS 스택 5종(Grafana/ELK/Phoenix/SigNoz/Langfuse) 기반,
+        기존 인프라 확장이 default. 운영 패턴 5종 + drift 감지 + 팀 간 책임 분담.
+      key_points:
+        - "Agent는 probabilistic이라 traditional 단위 테스트로 prod 신뢰성 보장 불가 — 모니터링이 신경계 역할"
+        - "감시 대상 2축: infra metrics (latency/error/CPU) + semantic metrics (intent grasp / tool 선택 / hallucination / task abandon)"
+        - "스택 5종 중 default는 기존 인프라 확장 — LLM 특화 기능(auto-eval) 필요할 때만 Langfuse/Phoenix 같은 신규 도입"
+        - "5가지 운영 패턴: Shadow / Canary / Regression trace 수집 / Self-healing / User feedback signal"
+        - "Latency / hallucination 책임이 한 팀에 묶이면 책임 회피 발생 — Product/ML/SRE 공유 dashboard + RACI 거버넌스 필수"
+      key_concept_pages: [223, 224, 226, 230, 232, 235, 237, 239]
+      figure_nums: []
+      table_nums: [2]
+      takeaway: "Production agent 모니터링은 probabilistic 시스템의 신경계 — 단순 알람이 아니라 infra+semantic 두 축의 학습 루프"
+
+  figures: []
+  tables:
+    - num: 2
+      caption: "Comparison of monitoring and observability stacks"
+      page: 230
+      importance: high
+  key_terms:
+    - term: "Shadow Mode"
+      page: 235
+      simple_definition: "신버전 agent를 같은 입력으로 병렬 실행하되 출력은 사용자에게 안 보임"
+    - term: "Canary Deployment"
+      page: 235
+      simple_definition: "신버전을 1~5% 트래픽에만 노출, version tag로 비교"
+    - term: "Self-Healing Agent"
+      page: 236
+      simple_definition: "자기 telemetry를 실시간으로 읽어 fallback/우회 적용"
+    - term: "Regression Trace Collection"
+      page: 236
+      simple_definition: "production 실패 trace를 자동으로 test suite에 추가 → 회귀 방지"
+  notable_equations: []
+  skipped:
+    figures: []
+    chapters: []
+
+plan:
+  - type: cover
+
+  - type: toc
+    items:
+      - "왜 일반 모니터링으론 부족한가"
+      - "스택 비교와 선택"
+      - "Monitoring Patterns 5종"
+      - "Drift 감지와 책임 분담"
+
+  - type: section_header
+    num: 10
+    title: "Monitoring in Production"
+    subtitle: "Production agent의 신경계"
+    chapter_ref: 10
+
+  - type: title_content
+    title: "왜 일반 모니터링으론 부족한가"
+    bullets:
+      - "Agent는 probabilistic — 같은 입력에 다른 결과"
+      - "Foundation model + tool chain + 무한 입력 → exhaustive test 불가"
+      - "모니터링은 단순 알람 ≠ 학습/iteration의 backbone"
+      - "잘 모니터링하는 팀이 더 빨리 배우고, 더 안전하게 ship"
+    source_page: 223
+
+  - type: two_content
+    title: "감시 대상 — 2개 축"
+    left_title: "Infra signals"
+    left_bullets:
+      - "Latency / TTFT / TPS"
+      - "Error rate / 5xx 비율"
+      - "CPU / Memory / Token throughput"
+      - "(전통적 SRE 메트릭)"
+    right_title: "Semantic signals"
+    right_bullets:
+      - "Intent grasp — 의도 파악 정확도"
+      - "Tool selection — 옳은 도구 선택?"
+      - "Hallucination rate"
+      - "Task abandonment 비율"
+    source_page: 225
+
+  - type: comparison
+    title: "OSS 모니터링 스택 5종"
+    headers: ["Stack", "Key strength", "Best for", "Trade-off"]
+    rows:
+      - ["Grafana + Loki/Tempo", "Composability + viz", "Enterprise ops", "구성 요소 많음"]
+      - ["ELK", "고급 search/analytics", "대규모 logs", "리소스 비용 큼"]
+      - ["Arize Phoenix", "Tracing + 디버깅", "Dev iteration", "Production scale 한계"]
+      - ["SigNoz", "Unified + lightweight", "Startup / ML 팀", "확장성 약함"]
+      - ["Langfuse", "Foundation 모델 평가", "LLM-native eval", "범용성 약함"]
+    source_page: 230
+    table_ref: 2
+    important: true
+
+  - type: title_content
+    title: "스택 선택 default — 기존 확장"
+    bullets:
+      - "Splunk / Datadog / New Relic 등 기존 인프라가 있으면 OTel만 추가"
+      - "LLM 특화 기능(auto-eval) 필요할 때만 Langfuse / Phoenix 신규 도입"
+      - "Greenfield 프로젝트 → Grafana 또는 SigNoz가 default"
+      - "OTel 기반이면 백엔드 hybrid도 가능 (logs는 Loki, traces는 Tempo)"
+    source_page: 230
+
+  - type: process
+    title: "OTel 기반 4단계 instrumentation"
+    steps: ["Instrument", "Aggregate", "Visualize", "Alert"]
+    descriptions:
+      - "OTel로 tool/LLM/fallback 이벤트 수집"
+      - "Loki(logs) + Tempo(traces)"
+      - "Grafana 단일 pane"
+      - "Slack/PagerDuty 임계치 알림"
+    source_page: 230
+
+  - type: title_content
+    title: "실전 alert 임계 — 3가지 예"
+    bullets:
+      - "Hallucination rate > 5% (지난 30분)"
+      - "Retry loop > 3회 (단일 세션)"
+      - "핵심 tool 평균 latency > 50% 증가"
+      - "→ Slack / PagerDuty / 이메일 어디든 OK"
+    source_page: 234
+
+  - type: section_header
+    num: 10
+    title: "Monitoring Patterns"
+    subtitle: "운영 5종 패턴"
+
+  - type: process
+    title: "5가지 모니터링 패턴"
+    steps: ["Shadow", "Canary", "Regression Trace", "Self-Heal", "User Feedback"]
+    descriptions:
+      - "병렬 실행, 노출 X"
+      - "1~5% 트래픽 노출"
+      - "실패 → test suite"
+      - "telemetry 기반 fallback"
+      - "사용자 신호 = 메트릭"
+    source_page: 235
+    important: true
+
+  - type: definition
+    term: "Shadow Mode"
+    definition: "신버전 agent가 production agent와 같은 입력을 동시에 처리하되, 출력은 사용자에게 노출 X"
+    why:
+      - "사용자 영향 0으로 신버전 동작 검증"
+      - "OTel + 공유 request ID로 production과 1:1 비교"
+    examples:
+      - "기존 ReAct → Reflection 추가 시"
+      - "tool 라이브러리 교체 시"
+    source_page: 235
+
+  - type: definition
+    term: "Canary Deployment"
+    definition: "신버전을 트래픽의 1~5%에만 노출, Grafana version tag로 baseline과 직접 비교"
+    why:
+      - "Shadow 다음 단계 — 진짜 사용자 반응 확인"
+      - "성공률 / latency / tool 사용 회복 시 즉시 비교"
+    examples:
+      - "v2 prompt template 1% 노출 → 24시간 abandonment 비교"
+    source_page: 235
+
+  - type: definition
+    term: "Self-Healing Agent"
+    definition: "자기 telemetry를 실시간 읽어 실패 시 fallback / 우회 적용"
+    why:
+      - "감지뿐 아니라 회복까지 자동화"
+      - "운영 인력 개입 없이 사용자 영향 최소화"
+    examples:
+      - "Tool 반복 실패 → 단순 fallback plan으로 reroute"
+      - "Latency spike → optional reasoning step 생략"
+      - "Hallucination 감지 → 사용자에게 clarification 질문"
+    source_page: 236
+
+  - type: title_content
+    title: "Distribution Shift 감지 — KL & PSI"
+    bullets:
+      - "사용자 입력 분포가 학습 시점과 달라졌는지 감지"
+      - "KL divergence: token frequency 분포 차이 (threshold > 0.5 → 경보)"
+      - "PSI (Population Stability Index): tool 사용 카테고리 같은 categorical 변수 drift"
+      - "→ drift 감지 시 retrain 트리거 / prompt 재조정"
+    source_page: 237
+
+  - type: title_content
+    title: "공유 dashboard + RACI"
+    bullets:
+      - "Latency를 infra 팀에만, hallucination을 ML 팀에만 → 책임 회피"
+      - "Product → planning latency × abandonment 상관 관찰"
+      - "ML → hallucination + drift + user feedback"
+      - "Infra/SRE → token spike + tool 안정성"
+      - "→ 한 dashboard에서 다 보고, RACI로 책임 명문화"
+    source_page: 240
+
+  - type: title_content
+    title: "Production lessons — latency가 빠지는 함정"
+    bullets:
+      - "'foundation model은 느리다' 마인드 → verbose prompt + 불필요 retry + bloat plan 누적"
+      - "trace 기반 instrumentation 없으면 drift 감지 불가능"
+      - "지연이 inevitable이라고 normalize → 어느 순간 전체 시스템 sluggish"
+      - "→ 매주 trace 기반 latency budget review 권장"
+    source_page: 240
+
+  - type: conclusion
+    title: "결론 — Monitoring is the nervous system"
+    takeaways:
+      - "Probabilistic agent엔 traditional unit test 부족 — 모니터링이 신뢰성의 backbone"
+      - "Infra + Semantic 두 축 instrumentation, OTel + Grafana 스택이 default"
+      - "Shadow → Canary → Regression trace → Self-heal → User feedback 5단 운영 패턴"
+      - "drift는 KL/PSI로 정량 감지, 책임은 RACI로 cross-functional 분담"
+    next_steps:
+      - "프로토타입에서 OTel + Grafana + Loki/Tempo 1주일 내 도입"
+      - "Hallucination + retry loop + tool latency 3개 alert 우선 셋업"
+      - "Shadow mode부터 시작, 신뢰도 쌓이면 Canary로 진행"
+    important: true
