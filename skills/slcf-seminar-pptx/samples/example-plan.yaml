@@ -5,6 +5,8 @@
 # Lint: python scripts/plan.py samples/example-plan.yaml
 # Build: python scripts/build_from_plan.py samples/example-plan.yaml --out=/tmp/agents.pptx
 
+schema_version: "1.0"
+
 paper:
   title: "Building Applications with AI Agents"
   authors: ["Michael Albada"]

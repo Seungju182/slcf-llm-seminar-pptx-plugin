@@ -12,6 +12,35 @@ PDF를 읽은 후 슬라이드를 빌드하기 전에 채워야 하는 **canonic
 - [2] 단계의 형식이 잠겨있으면 [3]은 단순 매핑이 됩니다
 - [2]에 lint를 걸어 추출 누락/편향을 자동 차단
 
+## 최상위 필드: `schema_version`
+
+```yaml
+schema_version: "1.0"   # MAJOR.MINOR
+paper: ...
+extraction: ...
+plan: ...
+```
+
+빌더가 plan.yaml을 받아 호환성을 확인하는 단서:
+- **MAJOR 변경 (1.0 → 2.0)**: breaking — 필드 rename/remove, 타입 변경. lint가 거부, 마이그레이션 필요.
+- **MINOR 변경 (1.0 → 1.1)**: additive — 옵션 필드 추가만. 옛 plan은 그대로 동작.
+
+| plan의 schema_version | 빌더의 CURRENT | lint 결과 |
+|---|---|---|
+| 없음 | 1.0 | warning ("`schema_version` 추가 권장", 1.0으로 간주) |
+| `"1.0"` | 1.0 | OK |
+| `"1.1"` | 1.0 | warning (새 필드 일부 무시될 수 있음) |
+| `"2.0"` | 1.0 | error (major mismatch — 마이그레이션 필요) |
+| `"v1"` 같은 비표준 | 1.0 | error (형식 오류) |
+
+### 마이그레이션 가이드 (향후)
+
+새 MAJOR 버전이 나오면 이 섹션에 변경 내역과 자동 마이그레이션 스크립트를 기록:
+
+- **1.0 → 2.0** (TBD): 변경 사항 / `scripts/migrate_1_to_2.py` 사용법
+
+현재는 1.0 단일 버전.
+
 ## 3개 섹션
 
 ### A. `paper` — PDF 메타데이터

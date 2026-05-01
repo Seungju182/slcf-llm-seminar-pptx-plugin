@@ -13,6 +13,8 @@
 # 검증: python scripts/plan.py <thisfile>.yaml
 # 빌드: python scripts/build_from_plan.py <thisfile>.yaml --out=발표.pptx
 
+schema_version: "1.0"  # MAJOR.MINOR. 빌더가 옛 plan을 거부할 때 마이그레이션 단서
+
 paper:
   title: "[TODO: 논문/책 제목]"
   authors: ["[TODO]"]

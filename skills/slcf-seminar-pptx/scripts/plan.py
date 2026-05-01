@@ -19,6 +19,21 @@ from collections import Counter
 from pathlib import Path
 
 
+# 현재 plan.yaml 스키마 버전 (semver MAJOR.MINOR)
+# - MAJOR 변경: breaking (필드 rename/remove, 타입 변경). 옛 plan은 마이그레이션 필요.
+# - MINOR 변경: additive (옵션 필드 추가). 옛 plan은 그대로 동작.
+CURRENT_SCHEMA_VERSION = "1.0"
+
+
+def _parse_version(v):
+    """'1.0' → (1, 0). 형식 오류 시 None."""
+    try:
+        parts = str(v).split('.')
+        return int(parts[0]), int(parts[1])
+    except (ValueError, IndexError, AttributeError):
+        return None
+
+
 # 슬라이드 type별 필수 필드
 REQUIRED_FIELDS = {
     'cover':          [],   # date/title은 paper에서 자동
@@ -59,6 +74,31 @@ def lint(plan_dict):
 
     if not isinstance(plan_dict, dict):
         return ['plan이 dict가 아닙니다 (yaml 파일이 비었거나 잘못됨)'], []
+
+    # ----- schema_version -----
+    sv = plan_dict.get('schema_version')
+    cur = _parse_version(CURRENT_SCHEMA_VERSION)
+    if sv is None:
+        warnings.append(
+            f"schema_version 필드 없음 — {CURRENT_SCHEMA_VERSION}으로 간주. "
+            f"plan.yaml 맨 위에 `schema_version: \"{CURRENT_SCHEMA_VERSION}\"` 추가 권장"
+        )
+    else:
+        parsed = _parse_version(sv)
+        if parsed is None:
+            errors.append(
+                f"schema_version 형식 오류: {sv!r} — '1.0' 같은 'MAJOR.MINOR' 형태"
+            )
+        elif parsed[0] != cur[0]:
+            errors.append(
+                f"schema_version {sv}의 major가 빌더({CURRENT_SCHEMA_VERSION})와 다름 — "
+                f"breaking change. references/plan-schema.md의 마이그레이션 가이드 참조"
+            )
+        elif parsed[1] > cur[1]:
+            warnings.append(
+                f"schema_version {sv}가 빌더({CURRENT_SCHEMA_VERSION})보다 새로움 — "
+                f"plan.yaml의 새 필드 일부가 무시될 수 있음"
+            )
 
     # ----- paper -----
     paper = plan_dict.get('paper') or {}
