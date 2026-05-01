@@ -124,3 +124,189 @@ plan:
 | 사진/도식 살려야 함 | `image` |
 
 한 key_point가 여러 슬라이드로 풀어쓰여도 OK (특히 important 키포인트).
+
+---
+
+# LLM/Agent 도메인 특화 룰
+
+이 plugin은 **LLM·Agent·Orchestration 분야**의 책/논문/survey 발표를 위한 것입니다.
+여기 적힌 룰은 그 도메인에 한정해 일반 가이드를 sharp하게 만든 것 — 다른 도메인엔 적용 X.
+
+## 1. 항상 등장하는 핵심 어휘 (always-capture list)
+
+다음 용어가 본문에 **처음 등장**하면 무조건 `definition` 슬라이드 또는 정의 박스로 보존
+(이미 정의된 챕터를 따로 만든다면 그 챕터에서, 아니면 등장 시점 챕터의 슬라이드 추가):
+
+**개념 기본**:
+Agent, LLM, Tool, Memory, Orchestration, Planner, Executor, Reasoner
+
+**패턴**:
+ReAct, Reflection, Plan-and-Execute, Tree of Thoughts (ToT), Chain of Thought (CoT),
+Self-Consistency, Self-Refine, Toolformer
+
+**메커니즘**:
+Function calling, Tool use, MCP (Model Context Protocol), RAG (Retrieval-Augmented Generation),
+Context window, In-context learning, Few-shot, Zero-shot
+
+**아키텍처**:
+Single-agent, Multi-agent, Hierarchical agent, Agent topology,
+Coordination, Delegation, Communication protocol
+
+**실패 모드 / 안전**:
+Hallucination, Prompt injection, Jailbreak, Guardrails, Red teaming,
+Distribution shift, Reward hacking
+
+**평가**:
+SWE-bench, GAIA, WebArena, AgentBench, MMLU, HumanEval (대표 벤치마크),
+Eval set, Golden set, A/B test
+
+**프레임워크**:
+LangGraph, AutoGen, CrewAI, OpenAI Assistants, Claude Agent SDK,
+LlamaIndex, LangChain, Semantic Kernel
+
+**비용/성능**:
+Tokens (input/output), Context cost, Latency (TTFT, TPS), Throughput,
+Cost-per-task, Cache hit rate
+
+→ 이 중 **본 발표의 청중이 모를 만한 것**만 슬라이드화. SLCF 멤버 대상이면 LLM/Token 같은 기초는 skip.
+
+## 2. 챕터 importance 결정 rubric
+
+LLM/Agent 도메인 책의 챕터 비중은 거의 정형화되어 있음:
+
+| 챕터 성격 | 권장 importance | 예시 |
+|---|---|---|
+| **Architecture / Orchestration** | 0.10~0.15 | "Multi-agent topology", "Coordination patterns" |
+| **Tool use / Memory** | 0.10~0.13 | "Tool calling patterns", "Long-term memory" |
+| **Pattern / Reasoning** | 0.10~0.13 | "ReAct / Reflection / ToT" |
+| **Evaluation / Safety** | 0.08~0.12 | "Eval methodology", "Red teaming" |
+| **Frameworks / Case study** | 0.05~0.08 | "LangGraph 소개", "Production deployments" |
+| **Background (LLM 역사)** | 0.03~0.05 | "Transformer 복습", "Pre-training 개요" |
+| **Glossary / Appendix** | skip 또는 0.02 | "Reference reading list" |
+
+**합 ≈ 1.0** 유지. 책의 절반이 응용/Architecture에 할애된 경우가 흔함 — Background는 짧게.
+
+## 3. Figure importance 판정 rubric
+
+| figure 종류 | importance | 처리 |
+|---|---|---|
+| Architecture/component diagram | high | `process` 또는 `image` 슬라이드 필수 |
+| Multi-agent topology / orchestration flow | high | `process` 또는 `image` |
+| Benchmark plot (model 비교, scale plot) | high | `comparison` 또는 `image` |
+| ReAct/Reflection trace 캡처 | high | `image` (raw quote 가치) |
+| Memory / Tool 호출 sequence diagram | high | `process` 또는 `image` |
+| Toy 교육용 예시 (cat picture 등) | medium~low | 보통 skip |
+| UI/제품 스크린샷 | low | skip 권장 (저작권/맥락 부족) |
+| 책 표지 / page divider art | skip | extraction.skipped에 등재 |
+| 수식 derivation | medium | `title_only` + 수식 캡처 또는 직접 후처리 |
+
+## 4. `key_points` 작성 — 도메인 특화 명제 패턴
+
+LLM/Agent 책에서 청중에게 가치 있는 key_point는 다음 6패턴 중 하나에 들어맞아야 함:
+
+| 패턴 | 예시 |
+|---|---|
+| **선택 기준** | "ReAct는 도구 호출 task에 적합, planning task엔 Plan-Executor가 우위" |
+| **Trade-off 정량화** | "Reflection은 정확도 +15%지만 token cost 3배" |
+| **실패 모드** | "Multi-agent는 coordination overhead로 latency 2x" |
+| **모델 의존성** | "Reflection은 GPT-4 이상에서만 효과 — 작은 모델에선 오히려 악화" |
+| **Production 권고** | "프로토타입은 LangGraph로 시작, scale 시 자체 orchestration 권장" |
+| **제한사항 / 반증** | "ToT는 search space 큰 task에만 유리, 단순 QA엔 CoT 충분" |
+
+❌ 안 좋은 key_point (도메인 anti-pattern):
+- "Agent에는 여러 종류가 있다" — 차별화 없음
+- "Tools를 잘 써야 한다" — 행동지침이 없음
+- "Memory가 중요하다" — 왜 / 어떤 종류인지 빠짐
+- "Multi-agent가 좋다" — 비용/실패 모드 무시
+
+## 5. `important: true` 도메인 한정 후보
+
+발표 1회당 **1~5개**. 다음 중에서만:
+
+- **Agent의 정의 슬라이드** — 발표 전체의 anchor
+- **Core component 4종** (Model / Tools / Memory / Orchestration) 정리
+- **저자가 권장하는 default 패턴** (예: "ReAct + function calling으로 시작")
+- **결정적 실패 모드** — 보안 / cost blowup / 무한 루프
+- **결정 rubric** — "언제 multi-agent로 가는가", "언제 fine-tune이 RAG보다 나은가"
+- **결론**
+
+❌ important로 표시하면 안 되는 것:
+- 단순 비교표 (importance: false로도 충분)
+- Background / 역사 슬라이드
+- 한 framework의 사용법
+- 저자의 곁가지 의견
+
+## 6. 코드 / Pseudocode 처리
+
+LLM/Agent 책엔 코드 예시가 많이 등장:
+
+| 코드 종류 | 처리 |
+|---|---|
+| **핵심 패턴 코드** (ReAct loop, Reflection cycle 등) | `image` 슬라이드로 PDF 캡처 또는 핵심 5~10줄을 `title_only` + add_textbox로 발췌 |
+| **API 호출 boilerplate** | 슬라이드화 X — "원문 p.N 코드 참조"만 |
+| **긴 함수 구현** (30+줄) | 핵심 5~10줄만 발췌 + "전체는 원문 p.N" 주석 |
+| **prompt template** | raw quote가 가치 — `definition` 또는 `title_content`에 그대로 |
+| **JSON tool spec** | `comparison` 표로 변환 (parameter 표) |
+
+**원칙**: 다이어그램이 코드를 함께 보여줄 때만 의미. `process` 슬라이드 + 옆에 핵심 코드 발췌가 default.
+
+## 7. 도메인 anti-patterns (lint로 못 잡는 의미적 누락)
+
+이 도메인 발표에서 흔히 빠뜨리는 것 — extraction 단계에서 self-check:
+
+| 안티패턴 | 보강 방법 |
+|---|---|
+| "ReAct / Reflection / ToT가 있다" 나열만 | 각각의 **언제 쓰는지** 한 문장 추가 |
+| "Tools 사용" | 호출 flow + 결과 처리 + 실패 시 행동 명시 |
+| "Memory" | short-term vs long-term, 어떤 데이터, 어떻게 검색 |
+| "Multi-agent가 좋다" | coordination 비용 + 권장 규모 명시 |
+| 벤치마크 점수 인용 | task 정의 + baseline + 사용 모델 명시 |
+| 모델 인용 ("GPT-4가 X 함") | 버전 / 날짜 / context window 명시 |
+| "Production-ready" | eval set + monitoring + rollback 체크 |
+| 보안 챕터 skip | 최소 한 슬라이드는 보안/오용 다룸 |
+| Cost 무시 | 핵심 패턴 1개에 대해 token cost 정량 명시 |
+
+## 8. PDF 읽을 때 우선 추출할 페이지
+
+LLM/Agent 책/논문에서 시간 대비 추출 효율 큰 페이지:
+
+1. **Table of Contents** (전체 챕터 importance 분배에 필수)
+2. **각 챕터 첫 1페이지** — motivation / problem statement
+3. **각 챕터 마지막 1페이지** — chapter summary / takeaway
+4. **모든 architecture diagram이 있는 페이지** — figure_ref 채움
+5. **모든 comparison table 페이지** — table_ref 채움
+6. **결론 챕터 전체** — 책의 thesis가 압축됨
+7. **Index / Glossary** — 핵심 용어의 정의 위치 빠르게 찾기
+
+논문은 보통 **Abstract / Method / Experiments / Limitations** 4개 섹션이 핵심 — Related Work는 importance 낮게.
+
+## 9. 직접 인용 vs 요약 결정
+
+| 콘텐츠 | 인용 vs 요약 | 이유 |
+|---|---|---|
+| **용어 정의** | raw quote 권장 | 저자 표현이 가장 정확 |
+| **Trade-off 주장** | 직접 인용 | 저자 의도 보존 |
+| **비교표** | 표 그대로 + 단위 명시 | 숫자는 변형 금지 |
+| **벤치마크 점수** | 직접 인용 + baseline 함께 | 맥락 빠지면 오해 |
+| **저자의 권고/예측** | 직접 인용 + 출처 페이지 | "저자에 따르면" 명시 |
+| **일반 설명** | 요약 OK | 발표 톤에 맞춰 압축 |
+| **코드** | 핵심 5~10줄만 발췌 | full을 옮기면 슬라이드 깨짐 |
+
+`source_page` 필드는 raw quote 또는 trade-off 인용 슬라이드에 **반드시** 채울 것 — 청중이 원문 확인 가능해야.
+
+---
+
+## 자가 점검 체크리스트 (extraction 끝낸 뒤)
+
+10개 중 8개 이상 ✅이면 extraction OK:
+
+- [ ] `extraction.chapters[].importance` 합 ∈ [0.95, 1.05]
+- [ ] 모든 챕터에 `key_points` 3~5개 (importance > 0.05인 챕터)
+- [ ] `key_points`가 §4 6패턴 중 하나에 들어맞음
+- [ ] §1 always-capture 용어 중 본문 처음 등장하는 것은 정의 슬라이드 후보로 표시
+- [ ] Architecture / orchestration figure는 모두 importance: high
+- [ ] `important: true` plan 슬라이드 1~5개 (§5 후보 중)
+- [ ] §7 도메인 anti-pattern 없음 (특히 "X가 좋다"만 적힌 key_point)
+- [ ] 핵심 raw quote 슬라이드는 `source_page` 채움
+- [ ] Eval / safety / cost 중 최소 한 챕터 포함
+- [ ] `extraction.skipped` 에 의도적 제외 figure 모두 등재 (이유 포함)

@@ -171,7 +171,9 @@ PDF가 주어지면 **절대 곧장 builder 메서드를 호출하지 마세요.
 
 ### 1단계: PDF 추출 (extraction)
 
-`assets/plan-template.yaml`을 복사해서 `extraction` 섹션을 채웁니다. 자세한 작성법은 `references/extraction-protocol.md`.
+`assets/plan-template.yaml`을 복사해서 `extraction` 섹션을 채웁니다.
+
+**필독**: `references/extraction-protocol.md` — 일반 가이드 + **LLM/Agent 도메인 특화 룰**(항상 등장하는 핵심 어휘, importance/figure rubric, key_points 6패턴, 안티패턴, 추출 자가점검 체크리스트). 이 plugin은 LLM·Agent·Orchestration 도메인 발표 전용 — 그에 맞춘 sharp한 룰이 들어 있음.
 
 **모든 항목 전수 기록** (lint가 누락 검사):
 
