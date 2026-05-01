@@ -280,6 +280,30 @@ LLM/Agent 책/논문에서 시간 대비 추출 효율 큰 페이지:
 
 논문은 보통 **Abstract / Method / Experiments / Limitations** 4개 섹션이 핵심 — Related Work는 importance 낮게.
 
+### 권장 도구 (anthropics/skills/pdf 같이 설치된 경우)
+
+`anthropics/skills`의 `pdf` skill이 함께 설치되어 있으면 Claude가 다음 라이브러리 사용법을 추가로 학습. 직접 호출해 추출 정확도 끌어올리기:
+
+```python
+# uv run --with pdfplumber python ...
+import pdfplumber
+with pdfplumber.open(pdf_path) as pdf:
+    # ToC 페이지 (보통 PDF 5~10페이지) — 챕터 분배에 직결
+    print(pdf.pages[6].extract_text())
+
+    # 챕터 첫 페이지 텍스트 (book p.1 = PDF p.21~25 보통)
+    print(pdf.pages[22].extract_text())
+
+    # 표 추출 — comparison/table_ref 슬라이드 source로 직접 사용 가능
+    for tbl in pdf.pages[114].extract_tables():
+        for row in tbl:
+            print(row)
+```
+
+추가로 `pypdfium2`로 figure 캡처(`page.render(scale=2.0).to_pil().save(...)`)해 `image` 슬라이드 source로 사용.
+
+⚠️ extraction.yaml의 `key_points` / `importance` / `role` 같은 **의미 판단**은 여전히 Claude가 함 — pdfplumber는 raw 추출만.
+
 ## 9. 직접 인용 vs 요약 결정
 
 | 콘텐츠 | 인용 vs 요약 | 이유 |

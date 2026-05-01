@@ -44,8 +44,8 @@ Claude가 자동으로 SKILL.md를 로드해 다음 3단계 수행:
 ## 로드맵
 
 - **Phase 1 (현재)** — 단일 skill plugin. Claude의 PDF 읽기 능력에 의존.
-- **Phase 2** — [anthropics/skills](https://github.com/anthropics/skills)의 `pdf` skill을 prerequisite로 채택해 raw 텍스트/표/이미지/OCR 추출 위임. 본 plugin은 의미 추출 (chapter importance, key_points 결정)에 집중.
-- **Phase 3** — `seminar-extractor` / `seminar-planner` skill 분리 (실사용 데이터 쌓이면).
+- **Phase 2 (권장 옵션)** — [anthropics/skills](https://github.com/anthropics/skills)의 `pdf` skill을 같이 설치. Claude가 pdfplumber/pypdfium2/pypdf 등 PDF 라이브러리 사용법을 추가로 학습 → 표/figure 추출 정확도 상승. 어댑터 코드 불필요 (Claude가 직접 라이브러리 사용). `/plugin marketplace add anthropics/skills` → `/plugin install pdf`.
+- **Phase 3 (이후)** — 실사용 데이터 누적 시 `seminar-planner` skill 분리 (lint 룰 진화에 따라).
 
 ## 라이선스
 
