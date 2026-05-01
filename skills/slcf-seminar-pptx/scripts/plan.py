@@ -328,6 +328,23 @@ def lint(plan_dict):
             else:
                 referenced_tables.add(tr)
 
+        # speaker_notes — 자세함 + 원문 페이지 참조 강제
+        # cover/toc 같은 framing 슬라이드는 노트가 필요 없거나 짧아도 OK라 검사 제외.
+        sn = slide.get('speaker_notes')
+        if sn is not None and t not in ('cover', 'toc'):
+            sn_str = str(sn).strip()
+            if sn_str:
+                if len(sn_str) < 100:
+                    warnings.append(
+                        f"{ctx}: speaker_notes 길이 {len(sn_str)}자 — "
+                        f"5~10문장(>=100자) 권장. 본문 클레임의 맥락·출처·자주 나오는 질문 추가."
+                    )
+                if 'p.' not in sn_str and '원문' not in sn_str:
+                    warnings.append(
+                        f"{ctx}: speaker_notes에 원문 페이지 참조 없음 — "
+                        f"각 클레임에 (원문 p.N) 또는 (p.N) 명시 필수."
+                    )
+
         # type별 추가 검증
         if t == 'comparison':
             headers = slide.get('headers') or []

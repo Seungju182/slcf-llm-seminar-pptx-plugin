@@ -292,27 +292,65 @@ plan:
   ...
 ```
 
-### `speaker_notes` 사용 가이드
+### `speaker_notes` 사용 가이드 — 자세하고, 모든 포인트에 원문 페이지 참조
 
-슬라이드 본문엔 안 들어가지만 발표자가 말로 풀 내용을 적어두는 곳. PowerPoint의 Notes pane에 들어감.
+슬라이드 본문엔 안 들어가지만 발표자가 말로 풀 내용. PowerPoint의 Notes pane.
 
-권장 길이: 슬라이드당 2~5문장. 슬라이드 본문을 그대로 옮겨 적지 말고 **추가 맥락**(왜 이 슬라이드를 넣었는지, 청중이 흔히 묻는 질문, 다음 슬라이드와의 연결)을 적기.
+#### 작성 규칙 (필수)
+
+1. **분량**: 슬라이드당 **5~10문장** (이전 가이드의 2-5문장은 너무 짧음)
+2. **모든 주장에 원문 페이지 참조**: 본문에서 가져온 클레임마다 `(원문 p.N)` 또는 `(p.N)` 명시. 청중 질문 시 즉시 출처 확인 가능해야.
+3. **본문 그대로 옮기지 말기**: 슬라이드 본문은 결론·키워드, notes는 **맥락 + 출처 + 추가 설명**.
+4. **구조**: 상위 1줄(이 슬라이드의 핵심 메시지) → 본문 클레임 + 페이지 인용 → 자주 나오는 질문 + 답 → 다음 슬라이드 연결
+5. **인용/숫자**: 책에서 직접 인용한 표현 / 정량 수치는 **반드시 페이지 명시**
+
+#### 좋은 예
 
 ```yaml
 - type: definition
   term: "ReAct"
   definition: "Reasoning + Acting을 번갈아 수행하는 agent 패턴"
+  source_page: 23
   speaker_notes: |
-    ReAct는 Yao et al. 2023 ICLR 논문에서 처음 제안.
-    Chain-of-Thought + tool use를 한 loop로 묶은 게 핵심.
-    "왜 단순 prompting과 다른가?" 질문이 자주 나오는데,
-    답: action 결과를 다시 LLM에 feed back해 reasoning이 진화.
-  ...
+    이 슬라이드의 핵심은 ReAct가 단순 prompting과 다른 이유 — action 결과를
+    reasoning에 다시 feed해 단계별로 진화한다는 점 (원문 p.23).
+
+    ReAct는 Yao et al. 2023 ICLR 논문에서 처음 제안되었고, 책에서는 p.23-25
+    걸쳐 detailed하게 설명. "Reason and Act"라는 이름의 의미를 강조하면 청중이
+    기억하기 좋음 (저자의 표현 직접 인용 — p.24 첫 문단).
+
+    자주 나오는 질문: "Chain-of-Thought랑 뭐가 달라요?" → CoT는 reasoning만,
+    ReAct는 reasoning + tool use를 한 loop로. 책 p.25의 비교 표가 명확함.
+
+    실측 효과: HotpotQA에서 +15% acc / token cost 3배 (원문 p.27 Table 4-2).
+
+    다음 슬라이드의 Reflection 패턴은 ReAct에 self-critique를 더한 변형
+    (p.28에서 도입). ReAct 이해가 곧 그 슬라이드 이해의 전제.
+```
+
+#### 나쁜 예 (lint warning 트리거)
+
+```yaml
+speaker_notes: |
+  ReAct 패턴 설명. CoT와 다름.    # ❌ 너무 짧음 (<100자), 페이지 참조 없음
+```
+
+```yaml
+speaker_notes: |
+  ReAct는 Yao et al. 2023에서 처음 나옴. tool calling 정확도가 GPT-3.5
+  이후 실용 수준 됨. ChatGPT가 가장 흔한 예시.    # ❌ "p." 또는 "원문" 없음
 ```
 
 ⚠️ `title_only` type의 `notes` 필드와 혼동 금지:
 - `title_only.notes` = 슬라이드 본문에 회색 placeholder로 "직접 후처리" 안내문 표시
 - `speaker_notes` = 발표자 노트 (모든 type 공통, 화면에 안 보임)
+
+#### Lint (자동 검증)
+
+| 위반 | 레벨 | 의미 |
+|---|---|---|
+| `speaker_notes` 존재 + 길이 < 100자 | warning | 너무 짧음. 5-10문장 권장 |
+| `speaker_notes` 존재 + `p.` / `원문` 미포함 | warning | 원문 페이지 참조 필요 — 모든 포인트에 출처 명시 |
 
 ## Lint 규칙 (자동 검증)
 

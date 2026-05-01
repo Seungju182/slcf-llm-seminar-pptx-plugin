@@ -242,7 +242,7 @@ PDF가 주어지면 **절대 곧장 builder 메서드를 호출하지 마세요.
   ...
 ```
 
-**발표자 노트 (`speaker_notes`)**: 모든 슬라이드 type이 받는 universal optional 필드. PowerPoint Notes pane에 들어가 발표자만 봄. 슬라이드당 2~5문장 권장. 본문 그대로 옮기지 말고 **추가 맥락**(왜 이 슬라이드, 자주 나오는 질문, 다음 슬라이드와의 연결)을 적기.
+**발표자 노트 (`speaker_notes`)**: 모든 슬라이드 type이 받는 universal optional 필드. PowerPoint Notes pane에 들어가 발표자만 봄. **슬라이드당 5~10문장** 권장 + **모든 본문 클레임에 `(원문 p.N)` 페이지 참조 필수**. 본문 그대로 옮기지 말고 **맥락·출처·자주 나오는 질문·다음 슬라이드 연결**을 적기. lint가 ① 길이 < 100자 ② `p.`/`원문` 미포함 시 warning. 자세한 가이드 + 좋은/나쁜 예시는 `references/plan-schema.md`의 `speaker_notes 사용 가이드` 참조.
 
 ```yaml
 - type: definition
