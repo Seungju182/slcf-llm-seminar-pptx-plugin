@@ -277,6 +277,7 @@ plan:
 | `process` | `add_process` | `title`, `steps` | `emphasize`, `descriptions`, `source_page`, `figure_ref` |
 | `two_content` | `add_two_content` | `title`, `left_title`, `left_bullets`, `right_title`, `right_bullets` | `source_page` |
 | `image` | `add_title_only` + `add_image` | `title`, `image_path` | `caption`, `source_page`, `figure_ref` |
+| `image_grid` | `add_image_grid` | `title`, `images` (1~4) | `captions`, `source_page`, `figure_refs` (list — 여러 figure를 한 슬라이드에 묶을 때) |
 | `conclusion` | `add_conclusion` | `takeaways` | `next_steps`, `title` |
 
 ### `important: true` 사용 가이드

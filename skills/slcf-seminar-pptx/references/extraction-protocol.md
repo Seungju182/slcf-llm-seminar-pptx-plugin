@@ -186,19 +186,77 @@ LLM/Agent 도메인 책의 챕터 비중은 거의 정형화되어 있음:
 
 **합 ≈ 1.0** 유지. 책의 절반이 응용/Architecture에 할애된 경우가 흔함 — Background는 짧게.
 
-## 3. Figure importance 판정 rubric
+## 3. Figure importance 판정 rubric + **캡처 필수 정책**
 
-| figure 종류 | importance | 처리 |
+### ⚠️ 정책 (v1.1+)
+
+**모든 importance=`high` 또는 `medium` figure는 PDF에서 캡처해 슬라이드에 embed가 default.** "분량상 텍스트로 통합" 같은 자체 판단으로 skip 금지. 텍스트만으로 figure를 대체하면 슬라이드가 빈약해 보임 (실측 audit으로 확인됨).
+
+`extraction.skipped.figures`에 들어갈 수 있는 것은 다음만:
+- 책 표지 / page divider art / chapter opener decoration
+- 본문과 무관한 보조 figure (저자가 "see appendix" 정도로만 언급)
+- 동일 개념을 더 잘 보여주는 다른 figure가 이미 채택된 경우 (이유 명시)
+
+→ **확신이 안 서면 캡처해서 image / image_grid 슬라이드로 넣을 것.**
+
+### Figure 종류별 처리 가이드
+
+| figure 종류 | importance | 권장 슬라이드 type |
 |---|---|---|
-| Architecture/component diagram | high | `process` 또는 `image` 슬라이드 필수 |
-| Multi-agent topology / orchestration flow | high | `process` 또는 `image` |
-| Benchmark plot (model 비교, scale plot) | high | `comparison` 또는 `image` |
-| ReAct/Reflection trace 캡처 | high | `image` (raw quote 가치) |
-| Memory / Tool 호출 sequence diagram | high | `process` 또는 `image` |
-| Toy 교육용 예시 (cat picture 등) | medium~low | 보통 skip |
-| UI/제품 스크린샷 | low | skip 권장 (저작권/맥락 부족) |
-| 책 표지 / page divider art | skip | extraction.skipped에 등재 |
-| 수식 derivation | medium | `title_only` + 수식 캡처 또는 직접 후처리 |
+| Architecture / component diagram | high | `image` (단독) 또는 `process`로 재현 |
+| Multi-agent topology / orchestration flow | high | `image` |
+| Benchmark plot (model 비교, scale plot) | high | `image` 또는 `comparison` 표 |
+| ReAct/Reflection trace 캡처 | high | `image` |
+| Memory / Tool 호출 sequence diagram | high | `image` |
+| UI/제품 스크린샷 (책의 핵심 예시) | medium | `image` 또는 `image_grid` 묶음 |
+| Toy 교육용 예시 (cat picture 등) | low | skipped 가능 (이유 기록) |
+| 책 표지 / page divider art | skip | skipped.figures 등재 |
+| 수식 derivation | medium | `image` (수식만 캡처) |
+
+### 캡처 도구 — `scripts/extract_figure.py`
+
+PDF 페이지를 PNG로 캡처:
+
+```bash
+# 단일 페이지 (가장 간단, 권장)
+uv run --with pypdfium2 --with pdfplumber --with Pillow \
+  python scripts/extract_figure.py book.pdf 66 --out figures/fig1.png
+
+# 여러 페이지 한 번에
+uv run --with pypdfium2 --with pdfplumber --with Pillow \
+  python scripts/extract_figure.py book.pdf --pages 66,69,70,78 --outdir figures/
+
+# 페이지의 특정 영역만 (정밀)
+uv run --with pypdfium2 --with pdfplumber --with Pillow \
+  python scripts/extract_figure.py book.pdf 78 --bbox 100,200,500,400 --out figures/fig4.png
+```
+
+**워크플로**:
+1. `extraction.figures`에 모든 figure 기록 (num/caption/page/importance)
+2. importance=high/medium인 figure 페이지를 일괄 캡처: `--pages 44,47,48,56 --outdir /tmp/ch3-figs/`
+3. plan에 `image` 또는 `image_grid` 슬라이드로 추가 (`image_grid`는 1~4개 묶음)
+4. 정말 안 쓸 figure만 `skipped.figures`에 이유와 함께
+
+### `image_grid` 사용 패턴
+
+비슷한 figure 2~4개를 한 슬라이드에 (1×2 / 1×3 / 2×2 자동 결정):
+
+```yaml
+- type: image_grid
+  title: "AI-enabled interfaces — terminal · IDE · GUI"
+  images:
+    - "figs/p44_warp.png"
+    - "figs/p47_n8n.png"
+    - "figs/p48_cursor.png"
+  captions:
+    - "Warp / Claude Code (terminal)"
+    - "n8n.io (visual orchestration)"
+    - "Cursor (IDE)"
+  source_page: 44
+  figure_ref: 1
+```
+
+3개면 자동 1×3, 4개면 2×2. 각 이미지는 cell 안에서 aspect ratio 보존.
 
 ## 4. `key_points` 작성 — 도메인 특화 명제 패턴
 

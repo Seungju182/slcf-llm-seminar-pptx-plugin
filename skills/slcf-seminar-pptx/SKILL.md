@@ -12,7 +12,7 @@ description: SLCF(Statistical Learning and Computational Finance Lab) 연구실 
 1. **plan.yaml을 먼저 작성, 그 다음 빌드** — PDF를 보고 곧장 builder 메서드를 호출하지 말고, 먼저 `plan.yaml`이라는 중간 표현을 채우세요. lint가 누락·편향을 자동 감지하고, 빌드는 단순 매핑이 됩니다. 이게 발표자 간 통일성의 핵심.
 2. **양식의 슬라이드를 deep copy 해서 사용** — 폰트, 색상, 로고, 배경 이미지가 100% 보존됩니다. 처음부터 새로 그리려고 하지 마세요.
 3. **모든 텍스트는 한국어로 작성** — 본문, 표, 박스, 캡션 모두. 논문/모델/지표 이름 같은 고유명사만 영어 그대로 ("DDPM", "Transformer"). 슬라이드 제목도 한국어 권장.
-4. **이미지 캡처 대신 직접 그리기** — PDF에서 잘라낸 표/다이어그램은 화질·톤 모두 양식과 안 맞음. `add_table`, `add_box`로 직접 그리고, 사진이나 복잡한 그래프만 `add_image`.
+4. **원본 figure는 캡처해서 embed가 default** — `extraction.figures`의 importance=high/medium은 모두 PDF에서 캡처해 `image` 또는 `image_grid` 슬라이드로. **표(table)는 예외** — `add_table`로 직접 그려야 한국어/톤 일관 유지. "분량상 텍스트로 통합" 같은 자체 판단으로 figure skip 금지 (실측 audit에서 슬라이드 빈약함의 주범으로 확인).
 
 ## 빠른 시작 (권장 흐름)
 
@@ -115,6 +115,7 @@ b.save()
 | `add_comparison(title, headers, rows, source_page=None)` | 비교표를 콘텐츠 영역 정중앙에 자동 배치 |
 | `add_process(title, steps, emphasize=[], descriptions=[], source_page=None)` | 가로 박스 N개 + 화살표 자동 분할. `emphasize=[i]`는 빨간 강조 |
 | `add_two_content(title, left_title, left_bullets, right_title, right_bullets)` | 좌/우 6칸씩 분할 |
+| `add_image_grid(title, images, captions=None, source_page=None)` | 1~4개 figure를 자동 grid (1×2 / 1×3 / 2×2). 각 cell aspect-preserve |
 | `add_conclusion(takeaways, next_steps=None)` | '핵심 정리' / '향후 연구' 두 섹션 |
 
 ### 슬라이드에 요소 직접 추가 (저수준, 모두 inch)
@@ -135,23 +136,37 @@ b.save()
 
 ## PDF에서 표/다이어그램을 보고 어떻게 옮길지
 
-논문에 있는 표/그림을 발표 자료에 넣을 때 **캡처해서 add_image로 붙이지 마세요.** 다음 흐름을 따르세요:
-
-### 표 → `add_table`로 직접 작성
+### 표(table) — `add_table`로 직접 작성 (한국어 일관)
 1. 논문 표를 보고 어떤 행/열이 있는지 파악
 2. 한국어로 헤더 작성 (예: "Method" → "방법", "Accuracy" → "정확도")
 3. 숫자만 그대로 옮기고, 단위는 한국어 친화적으로 (예: "8h" → "8시간")
-4. `add_table`로 그리기
+4. `add_table` (또는 `comparison` 슬라이드 type)로 그리기
 
-### 다이어그램 → `add_box` + `add_textbox`로 그리기
-1. 도식의 핵심 블록 3-7개 추출 (예: 입력 → 처리 → 출력)
-2. 박스 안 텍스트는 한국어로 (예: "Encoder" → "인코더")
-3. `add_box`로 박스 배치, 색으로 강조 (검정/빨강은 양식 톤과 맞음)
-4. 화살표는 `add_textbox(..., text='→', font_size=24)`로 표시
+### Figure(다이어그램·스크린샷·플롯) — **PDF 원본 캡처 default**
 
-### 정말 그릴 수 없는 경우 (사진, 복잡한 그래프)
-- 깔끔한 원본 이미지를 구해서 (가능하면 논문의 figure 파일을 직접) `add_image`로
-- 캡처본을 쓸 수밖에 없다면 슬라이드 폭의 80% 이상으로 크게 배치 (작게 넣지 말 것)
+`extraction.figures`의 importance=high/medium은 **모두 캡처해서 embed**. 이유: 텍스트로 풀어 쓰면 슬라이드가 빈약해 보이고, 저자의 시각 설계 의도가 사라짐.
+
+캡처 도구 — `scripts/extract_figure.py`:
+```bash
+# 단일 페이지 (가장 흔함, 권장)
+uv run --with pypdfium2 --with pdfplumber --with Pillow \
+  python scripts/extract_figure.py book.pdf 66 --out figs/fig1.png
+
+# 여러 페이지 한 번에
+uv run --with pypdfium2 --with pdfplumber --with Pillow \
+  python scripts/extract_figure.py book.pdf --pages 66,69,70,78 --outdir figs/
+```
+
+슬라이드에 넣는 방법:
+- **단일 figure** → `image` 슬라이드 type
+- **2~4개 비슷한 figure 묶음** → `image_grid` 슬라이드 type (자동 1×2 / 1×3 / 2×2)
+- **너무 자세해서 텍스트 발췌가 더 명확한 경우** → `extraction.skipped.figures`에 이유 기록 (단, 신중하게)
+
+### 코드로 다이어그램 만들 수 있는 경우 (PDF에 없는 새 도식)
+- 단순 선형 flow 3-7 단계: `process` 슬라이드 type
+- 좌우 대조: `two_content`
+- 단일 박스 강조: `add_box` 저수준 직접 호출
+- 위 3가지로 안 되는 복잡한 도식은 PowerPoint에서 직접 후처리 (코드로 무리하게 그리지 말 것)
 
 ## 색상 가이드
 

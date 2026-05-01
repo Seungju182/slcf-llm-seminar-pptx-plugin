@@ -51,6 +51,7 @@ REQUIRED_FIELDS = {
     'two_content':    ['title', 'left_title', 'left_bullets',
                        'right_title', 'right_bullets'],
     'image':          ['title', 'image_path'],
+    'image_grid':     ['title', 'images'],
     'conclusion':     ['takeaways'],
 }
 VALID_TYPES = set(REQUIRED_FIELDS)
@@ -304,6 +305,19 @@ def lint(plan_dict):
                 )
             else:
                 referenced_figures.add(fr)
+
+        # image_grid 등에서 여러 figure를 한 슬라이드에 묶을 때 — figure_refs (리스트)
+        frs = slide.get('figure_refs') or []
+        if not isinstance(frs, list):
+            errors.append(f"{ctx}: figure_refs는 리스트여야 함")
+            frs = []
+        for fr_item in frs:
+            if fr_item not in figure_nums:
+                errors.append(
+                    f"{ctx}: figure_refs={fr_item}이 extraction.figures에 없음"
+                )
+            else:
+                referenced_figures.add(fr_item)
 
         tr = slide.get('table_ref')
         if tr is not None:

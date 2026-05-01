@@ -338,6 +338,7 @@ class SeminarBuilder:
 
         title_set = False
         bullets_set = False
+        body_shape = None
 
         for shape in slide.shapes:
             if not shape.has_text_frame:
@@ -351,7 +352,45 @@ class SeminarBuilder:
                 title_set = True
             elif not bullets_set and '\n' in current:
                 _set_bullets_keep_format(shape, bullets)
+                body_shape = shape
                 bullets_set = True
+
+        # 본문 영역을 콘텐츠 그리드 전체로 확장 + bullet 수에 따라 폰트 동적 조정.
+        # 양식의 body placeholder(H=2.2")가 너무 작아 슬라이드 위쪽에 콘텐츠가
+        # 압축되던 문제를 fix.
+        if body_shape is not None:
+            g = self.style.grid
+            body_shape.left = Inches(g.content_left())
+            body_shape.top = Inches(g.header_bottom + 0.25)
+            body_shape.width = Inches(g.content_width())
+            body_shape.height = Inches(
+                g.footer_top - (g.header_bottom + 0.25) - 0.2
+            )
+
+            # bullet 수 기반 폰트 (시각적 무게감)
+            n = max(1, len(bullets))
+            if n <= 2:
+                body_size = 28
+            elif n == 3:
+                body_size = 26
+            elif n == 4:
+                body_size = 22
+            elif n == 5:
+                body_size = 20
+            else:
+                body_size = 18
+
+            tf = body_shape.text_frame
+            tf.word_wrap = True
+            try:
+                tf.vertical_anchor = MSO_ANCHOR.MIDDLE  # 수직 중앙 정렬
+            except Exception:
+                pass
+            for para in tf.paragraphs:
+                para.space_before = Pt(8)
+                para.space_after = Pt(8)
+                for run in para.runs:
+                    run.font.size = Pt(body_size)
 
         # 양식 본문에 있던 그림(image) 제거
         for shape in list(slide.shapes):
@@ -387,6 +426,90 @@ class SeminarBuilder:
                 # 본문 영역 통째로 제거
                 sp = shape._element
                 sp.getparent().remove(sp)
+
+        return slide
+
+    def add_image_grid(self, title, images, captions=None, source_page=None,
+                       important=False):
+        """N개의 이미지를 자동 그리드로 배치. n=1→1칸, 2→1×2, 3→1×3, 4→2×2.
+
+        각 이미지는 cell 안에서 aspect ratio 보존 + 가로 중앙 정렬.
+        captions가 있으면 각 이미지 아래 작은 회색 캡션.
+
+        Args:
+            title: 슬라이드 제목
+            images: 이미지 경로 리스트 (1~4개)
+            captions: 각 이미지 캡션 (선택, len(images)와 동일 길이)
+            source_page: 원문 페이지 (선택)
+            important: True면 헤더 노란색
+        """
+        n = len(images)
+        if n < 1 or n > 4:
+            raise ValueError(f"image_grid는 1~4개 이미지만 지원 (받음: {n})")
+
+        slide = self.add_title_only(title, important=important)
+        g = self.style.grid
+        s = self.style.sizes
+        c = self.style.colors
+
+        has_caption = bool(captions and any(captions))
+        cap_h = 0.4 if has_caption else 0.0
+
+        area_left = g.content_left()
+        area_top = g.content_top() + 0.2
+        area_w = g.content_width()
+        area_h = g.content_bottom() - area_top - (0.4 if source_page else 0.1)
+
+        if n == 1:
+            rows, cols = 1, 1
+        elif n == 2:
+            rows, cols = 1, 2
+        elif n == 3:
+            rows, cols = 1, 3
+        else:  # n == 4
+            rows, cols = 2, 2
+
+        gap = 0.2
+        cell_w = (area_w - gap * (cols - 1)) / cols
+        cell_h = (area_h - gap * (rows - 1)) / rows
+        img_max_h = cell_h - (cap_h + 0.05 if has_caption else 0)
+
+        EMU_PER_INCH = 914400
+        for i, img_path in enumerate(images):
+            r, col = divmod(i, cols)
+            cell_left = area_left + col * (cell_w + gap)
+            cell_top = area_top + r * (cell_h + gap)
+
+            # 자연 크기로 추가 → cell에 맞춰 aspect-preserve 리사이즈
+            pic = slide.shapes.add_picture(
+                img_path, Inches(cell_left), Inches(cell_top)
+            )
+            ratio = pic.height / pic.width if pic.width else 1.0
+            target_w_emu = Inches(cell_w)
+            target_h_emu = int(target_w_emu * ratio)
+            max_h_emu = Inches(img_max_h)
+            if target_h_emu > max_h_emu:
+                target_h_emu = max_h_emu
+                target_w_emu = int(target_h_emu / ratio) if ratio else max_h_emu
+            pic.width = target_w_emu
+            pic.height = target_h_emu
+            # cell 안에서 가로 중앙 정렬 (top은 cell 상단)
+            actual_w_inch = target_w_emu / EMU_PER_INCH
+            pic.left = Inches(cell_left + (cell_w - actual_w_inch) / 2)
+            pic.top = Inches(cell_top)
+
+            if has_caption and i < len(captions) and captions[i]:
+                actual_h_inch = target_h_emu / EMU_PER_INCH
+                cap_top = cell_top + actual_h_inch + 0.05
+                self.add_textbox(
+                    slide, captions[i],
+                    left=cell_left, top=cap_top,
+                    width=cell_w, height=cap_h,
+                    font_size=s.caption, color=c.muted_gray, align='center'
+                )
+
+        if source_page:
+            self._add_source_caption(slide, source_page)
 
         return slide
 
@@ -681,14 +804,14 @@ class SeminarBuilder:
         s = self.style.sizes
         c = self.style.colors
 
-        box_top = g.content_top() + 0.3
-        box_h = 1.4
+        box_top = g.content_top() + 0.2
+        box_h = 1.0   # 정의 박스를 더 컴팩트하게 → 아래 섹션에 더 많은 공간
         self.add_box(slide, definition,
             left=g.content_left(), top=box_top,
             width=g.content_width(), height=box_h,
             fill_color=c.light_gray, font_size=s.body, align='left')
 
-        sec_top = box_top + box_h + 0.4
+        sec_top = box_top + box_h + 0.35
         # source caption이 차지할 공간(약 0.4")을 빼고 사용 가능한 높이
         avail_h = g.content_bottom() - sec_top - (0.4 if source_page else 0.1)
 
@@ -700,7 +823,7 @@ class SeminarBuilder:
             self.add_textbox(slide, text,
                 left=left + 0.3, top=top + 0.55,
                 width=width - 0.3, height=height - 0.55,
-                font_size=s.body_sub)
+                font_size=s.body)  # 14pt(body_sub) → 18pt(body)로 격상
 
         if why and examples:
             # 좌우 2칸 — 12분할 그리드 6/6
@@ -880,7 +1003,7 @@ class SeminarBuilder:
 
         _section('핵심 정리', takeaways, s.body)
         if next_steps:
-            _section('향후 연구', next_steps, s.body_sub)
+            _section('향후 연구', next_steps, s.body)  # 14pt → 18pt 일관성
 
         return slide
 

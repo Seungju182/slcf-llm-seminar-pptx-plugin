@@ -114,6 +114,15 @@ def _dispatch(b, slide, paper):
             important=imp,
         )
 
+    if t == 'image_grid':
+        return b.add_image_grid(
+            title=slide['title'],
+            images=slide['images'],
+            captions=slide.get('captions'),
+            source_page=slide.get('source_page'),
+            important=imp,
+        )
+
     if t == 'image':
         s = b.add_title_only(slide['title'], important=imp)
         g = b.style.grid
