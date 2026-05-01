@@ -318,6 +318,51 @@ with pdfplumber.open(pdf_path) as pdf:
 
 `source_page` 필드는 raw quote 또는 trade-off 인용 슬라이드에 **반드시** 채울 것 — 청중이 원문 확인 가능해야.
 
+## 10. 부분 범위 발표 (`extraction.scope`)
+
+사용자가 **전체 책이 아닌 일부만** 발표하길 요청하는 경우 — 가장 흔한 패턴 4가지:
+
+| 사용자 요청 | scope 설정 |
+|---|---|
+| "Chapter 8만 30장으로 핵심 키워드 위주" | type=chapter, chapter_nums=[8], target_slides=30, focus=definitions |
+| "Memory와 Tool use 챕터 묶어서 1시간" | type=chapter, chapter_nums=[3, 8], target_slides=~25 |
+| "Orchestration 패턴 비교 발표" | type=topic, target_slides=20, focus=comparisons |
+| "Ch5의 보안 sub-section만" | type=section, target_slides=10, focus=definitions |
+
+### 작성 절차 (부분 범위)
+
+1. **`paper.total_pages`는 PDF 전체 페이지** 그대로 (Ch8만 다뤄도 책 자체의 메타는 변경 X)
+2. **`extraction.scope` 블록 채움** — type, chapter_nums, target_slides, focus
+3. **`extraction.chapters`엔 scope 안 챕터만 자세히** 채움. importance는 scope 안에서의 비중으로 합 ≈ 1.0:
+   - Ch8만이면 `[{num: 8, importance: 1.0}]`
+   - Ch3+Ch8 묶으면 `[{num: 3, importance: 0.4}, {num: 8, importance: 0.6}]`
+4. scope 밖 챕터는 **언급할 필요만 있으면** importance: 0으로 한 줄씩, 아니면 생략
+5. `key_points`는 scope 안 챕터 안의 sub-section/concept 단위로 더 세밀하게 (3~5개에서 5~8개로 늘려도 OK)
+6. `plan`은 scope 안에서만 작성:
+   - cover, toc, conclusion 3장 + 본문 (target_slides - 3)장
+   - target_slides=30이면 본문 27장 → Ch8의 sub-section importance 비례로 분배
+   - focus=definitions면 `definition` 슬라이드를 본문의 50% 이상으로
+
+### scope 모드일 때 lint가 felxible해지는 부분
+- 다른 챕터가 plan에 없어도 warning X (scope 밖이니까)
+- 챕터 슬라이드 수 vs importance 비례 검사도 scope 안 챕터끼리만
+- importance 합 [0.7, 1.3]은 여전히 검사 (scope 내 합)
+
+### scope 모드일 때 lint가 더 엄격해지는 부분
+- target_slides 명시 → plan 길이 ±15% 안 (예: 30이면 [26, 34])
+- focus=definitions면 `definition` 슬라이드 50% 이상
+
+### 도메인 특화 부분 범위 패턴 (LLM/Agent)
+
+| 발표 주제 | scope 가이드 |
+|---|---|
+| **단일 패턴 심화** (예: ReAct만) | type=topic, focus=definitions, target=~20 |
+| **패턴 비교** (ReAct vs Plan-Executor vs Reflection) | type=topic, focus=comparisons, target=~25 |
+| **Memory 시스템** | type=chapter, focus=process (short/long-term flow) |
+| **Tool use 전체** | type=chapter, focus=mixed (def + comparison + process) |
+| **Eval & Safety** | type=chapter, focus=mixed, important: 보안 슬라이드 1~2장 |
+| **Production 배포** | type=topic, focus=process, target=~30, 코드 슬라이드 다수 |
+
 ---
 
 ## 자가 점검 체크리스트 (extraction 끝낸 뒤)

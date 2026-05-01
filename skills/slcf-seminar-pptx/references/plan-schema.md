@@ -64,6 +64,14 @@ paper:
 extraction:
   abstract: "한 문단 요약"
 
+  # scope (선택, 1.1+) — 부분 범위 발표
+  scope:
+    type: chapter                  # full | chapter | section | topic
+    chapter_nums: [8]              # type=chapter일 때 어느 챕터(들)
+    target_slides: 30              # 명시 분량 (없으면 importance 비례)
+    focus: definitions             # definitions | comparisons | process | mixed
+    description: "Ch8 (Memory) 심화 — 핵심 키워드 정의 위주"
+
   chapters:
     - num: 1
       title: "Introduction"
@@ -128,6 +136,45 @@ extraction:
 
 **필수**: `chapters` (최소 1개, 각각 `num`/`title`/`pages`/`importance`).
 나머지는 PDF에 해당 요소가 있다면 모두 기록 (없으면 빈 리스트).
+
+#### `extraction.scope` 상세 (1.1+ 선택 블록)
+
+부분 범위 발표 (특정 챕터/주제만, 명시적 슬라이드 분량, 슬라이드 type 편향 등) 처리. 없으면 **전체 책/논문 발표**로 간주.
+
+| 필드 | 타입 | 의미 |
+|---|---|---|
+| `type` | `full` \| `chapter` \| `section` \| `topic` | 범위 종류. 기본 `full`. |
+| `chapter_nums` | `int[]` | `type=chapter`일 때 필수 — 어떤 챕터 번호들이 발표 대상인지 |
+| `target_slides` | `int` | 명시 슬라이드 분량 (예: 30). plan 길이가 ±15% 안인지 lint가 검사 |
+| `focus` | `definitions` \| `comparisons` \| `process` \| `mixed` | 슬라이드 type 편향. 매핑되는 type이 본문의 50% 미만이면 warning |
+| `description` | string | 사람이 읽는 한 줄 설명 (lint 영향 X) |
+
+**`scope.type='chapter'` 사용 패턴 (예: "Ch8만 30장")**:
+
+```yaml
+extraction:
+  scope:
+    type: chapter
+    chapter_nums: [8]
+    target_slides: 30
+    focus: definitions
+    description: "Ch8 (Memory) 심화"
+  chapters:
+    - num: 8
+      title: "Memory"
+      importance: 1.0          # scope 내 비중
+      key_points: [...]
+    # scope 밖 챕터는:
+    #   (1) 아예 안 쓰거나, 또는
+    #   (2) importance: 0.0 으로 두면 lint가 plan 등장 강제 안 함
+```
+
+**lint가 scope를 인식하는 방식**:
+- `scope.type='chapter'`이면 `scope.chapter_nums` 안 챕터만 plan 커버리지/슬라이드 비례 검사 대상
+- 그 외 챕터는 plan에 안 나와도 warning 없음
+- importance 합 검사 ([0.7, 1.3])는 그대로 유지 — scope 내 챕터들의 합으로 자연스럽게 만족
+- `target_slides` 명시 시 plan 길이가 ±15% 벗어나면 warning
+- `focus='definitions'`이면 `definition` slide가 본문의 50% 미만일 때 warning
 
 ### C. `plan` — 슬라이드 순서대로 (배열)
 

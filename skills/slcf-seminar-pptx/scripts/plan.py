@@ -22,7 +22,11 @@ from pathlib import Path
 # 현재 plan.yaml 스키마 버전 (semver MAJOR.MINOR)
 # - MAJOR 변경: breaking (필드 rename/remove, 타입 변경). 옛 plan은 마이그레이션 필요.
 # - MINOR 변경: additive (옵션 필드 추가). 옛 plan은 그대로 동작.
-CURRENT_SCHEMA_VERSION = "1.0"
+CURRENT_SCHEMA_VERSION = "1.1"
+
+# extraction.scope 블록 (1.1 추가)
+VALID_SCOPE_TYPES = {'full', 'chapter', 'section', 'topic'}
+VALID_SCOPE_FOCUS = {'definitions', 'comparisons', 'process', 'mixed'}
 
 
 def _parse_version(v):
@@ -114,6 +118,45 @@ def lint(plan_dict):
     chapters = ex.get('chapters') or []
     if not chapters:
         errors.append("extraction.chapters가 비어 있음 — 최소 1개 챕터 필요")
+
+    # ----- scope (1.1 추가) -----
+    # 부분 범위 발표 (특정 챕터/주제만, 또는 명시적 슬라이드 분량) 처리.
+    # scope 없거나 type='full'이면 전체 책/논문 발표.
+    scope = ex.get('scope') or {}
+    scope_type = scope.get('type', 'full')
+    scope_chapter_nums = set()
+    scope_target_slides = scope.get('target_slides')
+    scope_focus = scope.get('focus')
+
+    if scope_type not in VALID_SCOPE_TYPES:
+        errors.append(
+            f"extraction.scope.type='{scope_type}' 잘못됨 — "
+            f"허용: {sorted(VALID_SCOPE_TYPES)}"
+        )
+    if scope_type == 'chapter':
+        nums = scope.get('chapter_nums') or []
+        if not nums:
+            errors.append(
+                "scope.type='chapter'이면 scope.chapter_nums (리스트)가 필수"
+            )
+        else:
+            scope_chapter_nums = set(nums)
+            valid_chapter_nums = {c.get('num') for c in chapters}
+            for n in nums:
+                if n not in valid_chapter_nums:
+                    errors.append(
+                        f"scope.chapter_nums={n}이 extraction.chapters에 없음"
+                    )
+    if scope_target_slides is not None:
+        if not isinstance(scope_target_slides, int) or scope_target_slides <= 0:
+            errors.append(
+                f"scope.target_slides={scope_target_slides!r}이 양의 정수 아님"
+            )
+    if scope_focus is not None and scope_focus not in VALID_SCOPE_FOCUS:
+        errors.append(
+            f"scope.focus='{scope_focus}' 잘못됨 — "
+            f"허용: {sorted(VALID_SCOPE_FOCUS)}"
+        )
 
     importance_sum = sum((c.get('importance') or 0) for c in chapters)
     if chapters and (importance_sum < 0.7 or importance_sum > 1.3):
@@ -318,11 +361,14 @@ def lint(plan_dict):
                 )
 
     # ----- 챕터 커버리지 -----
+    # scope.type='chapter'이면 scope 밖 챕터는 plan에 안 나와도 OK.
     section_chapters = set(section_chapter_refs)
     for c in chapters:
         cnum = c.get('num')
         if cnum in skipped_chapters:
             continue
+        if scope_type == 'chapter' and cnum not in scope_chapter_nums:
+            continue  # scope 밖 챕터 — plan에 없어도 정상
         if cnum not in section_chapters and (c.get('importance') or 0) > 0.05:
             warnings.append(
                 f"chapter {cnum} '{c.get('title')}'이(가) plan에 "
@@ -330,12 +376,15 @@ def lint(plan_dict):
             )
 
     # 챕터별 슬라이드 수 vs importance 비례
+    # scope.type='chapter'이면 scope 안 챕터끼리만 비례 검사.
     chapter_slide_count = _count_slides_per_chapter(plan, chapter_nums)
     total_chapter_slides = sum(chapter_slide_count.values())
     if total_chapter_slides > 0:
         for c in chapters:
             cnum = c.get('num')
             if cnum in skipped_chapters:
+                continue
+            if scope_type == 'chapter' and cnum not in scope_chapter_nums:
                 continue
             imp = c.get('importance') or 0
             if imp < 0.05:
@@ -405,6 +454,33 @@ def lint(plan_dict):
             warnings.append(
                 f"important: true가 본문의 {important_ratio:.0%} ({important_count}/"
                 f"{len(body_slides)}장) — 강조는 25% 이하로. 너무 많으면 효과 사라짐"
+            )
+
+    # ----- scope.target_slides — 명시 분량 검사 -----
+    if scope_target_slides:
+        actual = len(plan)
+        lo, hi = int(scope_target_slides * 0.85), int(scope_target_slides * 1.15)
+        if actual < lo or actual > hi:
+            warnings.append(
+                f"plan 길이 {actual}장 vs scope.target_slides={scope_target_slides} "
+                f"(±15% 허용범위 [{lo}, {hi}] 밖)"
+            )
+
+    # ----- scope.focus — 슬라이드 type 분포 약한 검사 -----
+    focus_to_type = {
+        'definitions': 'definition',
+        'comparisons': 'comparison',
+        'process':     'process',
+    }
+    if scope_focus in focus_to_type and body_slides:
+        target_type = focus_to_type[scope_focus]
+        focused = sum(1 for s in body_slides if s.get('type') == target_type)
+        ratio = focused / len(body_slides)
+        if ratio < 0.5:
+            warnings.append(
+                f"scope.focus='{scope_focus}'인데 {target_type} 슬라이드가 "
+                f"본문의 {ratio:.0%} ({focused}/{len(body_slides)}장) — "
+                f"50% 이상 권장 (focus를 'mixed'로 바꾸거나 비중 늘리기)"
             )
 
     return errors, warnings

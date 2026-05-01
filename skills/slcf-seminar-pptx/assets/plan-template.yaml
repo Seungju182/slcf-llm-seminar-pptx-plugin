@@ -13,7 +13,7 @@
 # 검증: python scripts/plan.py <thisfile>.yaml
 # 빌드: python scripts/build_from_plan.py <thisfile>.yaml --out=발표.pptx
 
-schema_version: "1.0"  # MAJOR.MINOR. 빌더가 옛 plan을 거부할 때 마이그레이션 단서
+schema_version: "1.1"  # MAJOR.MINOR. 빌더가 옛 plan을 거부할 때 마이그레이션 단서
 
 paper:
   title: "[TODO: 논문/책 제목]"
@@ -26,6 +26,15 @@ paper:
 
 extraction:
   abstract: "[TODO: 한 문단 요약]"
+
+  # scope (선택, 1.1+) — 부분 범위 발표 (예: "Ch8만 30장")일 때 채움.
+  # 없으면 전체 책/논문 발표로 간주.
+  # scope:
+  #   type: chapter                # full | chapter | section | topic
+  #   chapter_nums: [8]            # type=chapter일 때 어느 챕터(들)
+  #   target_slides: 30            # 명시 분량 (없으면 importance 비례)
+  #   focus: definitions           # definitions | comparisons | process | mixed
+  #   description: "Ch8 (Memory) — 핵심 키워드 정의 위주"
 
   chapters:
     # importance 합 ≈ 1.0이 되게. 빠뜨리면 lint가 잡음.
